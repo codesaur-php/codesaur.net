@@ -163,6 +163,12 @@ powershell -ExecutionPolicy Bypass -File C:\xampp\htdocs\codesaur.net\scripts\de
 **Алдаа олох:** `scripts\deploy-hook.log` (webhook бүр: exit code, whoami, гаралт) ба
 `scripts\deploy.log` (deploy.ps1-ийн алхмууд). Хоёулаа git-д ороогүй, 512KB-д өөрөө таслагдана.
 
+`deploy.ps1` нь git-ийн итгэмжлэл асуух цонхыг хааж ажилладаг
+(`GIT_TERMINAL_PROMPT=0` + `credential.interactive=false`). Webhook нь SYSTEM
+хэрэглэгчээр, дэлгэцгүй ажилладаг тул prompt гарвал хариулах хүн байхгүй бөгөөд
+git үүрд өлгөөтэй үлдэж, repo-гийн файлуудыг барьж авдаг. Токен хүчингүй болбол
+одоо шууд `git rev-parse амжилтгүй` гэж лог руу бичээд гарна - өлгөөтэй үлдэхгүй.
+
 **Deploy амжилттай болсныг шалгах:** `/dashboard` sidebar-ийн доод хэсэгт
 `codesaur.net {version} | {date}` гарна - `composer.json` `extra.version` бүр commit-д
 шинэчлэгддэг тул шинэ утга харагдвал deploy буусан гэсэн үг.

@@ -346,7 +346,34 @@ class JWTAuthMiddleware implements MiddlewareInterface
             // and return 401/403 - there is no login-redirect safety net here.
             $segment = \explode('/', $path)[2] ?? '';
             if ($segment !== 'login' && $segment !== 'protected') {
-                $loginUri = (string) $request->getUri()->withPath("$scriptPath/dashboard/login");
+                // Хэрэглэгчийн орох гэсэн замыг login руу дамжуулна. Нэвтэрсний
+                // дараа LoginController түүнийг шалгаад буцааж тэр хуудсанд нь
+                // буулгана. Утга нь app-relative ('/dashboard/news') - script
+                // path-ыг LoginController өөрөө нэмнэ.
+                //
+                // Зөвхөн GET хүсэлт зам үлдээнэ: browser-ийн redirect үргэлж GET
+                // тул POST/PUT/DELETE-ийн зам руу буцаах нь утгагүй (ихэнхдээ
+                // 404/405), мөн мутац хийдэг замыг дахин тоглуулах эрсдэлтэй.
+                //
+                // withQuery()-г ил дуудна. Үүнгүй бол withPath() нь анхны
+                // query-г хэвээр авчирдаг тул '/dashboard/news?forgot=x' нь
+                // login хуудсыг нууц үг сэргээх горимд оруулах байлаа.
+                //
+                // Critical (English): the explicit withQuery() must stay -
+                // withPath() alone carries the blocked URL's query string over,
+                // letting an arbitrary ?forgot= / ?signup= drive the login page.
+                $query = '';
+                if ($request->getMethod() === 'GET') {
+                    $target = $path;
+                    $original = $request->getUri()->getQuery();
+                    if ($original !== '') {
+                        $target .= "?$original";
+                    }
+                    $query = 'return=' . \rawurlencode($target);
+                }
+                $loginUri = (string) $request->getUri()
+                    ->withPath("$scriptPath/dashboard/login")
+                    ->withQuery($query);
                 return $this->redirectResponse($request, $loginUri, 302);
             }
 

@@ -258,6 +258,10 @@
                     removeAlert(formForgot);
                 }
 
+                /* Нэвтрэхийн өмнө орох гэсэн хуудас (JWTAuthMiddleware -> ?return=).
+                   Сервер талд баталгаажсан дотоод зам, эсвэл хоосон мөр ирнэ. */
+                const returnUrl = {{ return_url|json_encode }};
+
                 /* URL query message support (?message=...&message_type=...) */
                 const urlParams = new URLSearchParams(window.location.search);
                 if (urlParams && urlParams.get('message')) {
@@ -329,7 +333,7 @@
                             throw new Error(response.message ?? `{{ 'something-went-wrong'|text|e }}`);
                         }
                         showMessage(formLogin, 'success', response.message);
-                        window.location.href = `{{ 'home'|link }}`;
+                        window.location.href = returnUrl || `{{ 'home'|link }}`;
                     }).catch(error => {
                         showMessage(formLogin, 'danger', error.message);
                         spinNstop(this);

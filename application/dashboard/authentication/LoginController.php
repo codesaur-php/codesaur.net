@@ -88,10 +88,66 @@ class LoginController extends \Dashboard\Controller
 
         // 2) Хэрэглэгч аль хэдийн нэвтэрсэн бол
         if ($this->isUserAuthorized()) {
+            $return = $this->resolveReturnPath();
+            if ($return !== '') {
+                \header('Location: ' . \filter_var($return, \FILTER_SANITIZE_URL), true, 302);
+                exit;
+            }
             return $this->redirectTo('home');
         }
 
         $this->renderLogin();
+    }
+
+    /**
+     * Нэвтэрсний дараа буцаж очих замыг query-ээс уншиж баталгаажуулах.
+     *
+     * `JWTAuthMiddleware` нь нэвтрээгүй хэрэглэгчийг login руу явуулахдаа
+     * очих гэсэн замыг `?return=/dashboard/news` хэлбэрээр дамжуулдаг.
+     * Энэ метод түүнийг шалгаж, browser-т өгөх бүтэн зам болгож буцаана.
+     *
+     * Зөвхөн энэ dashboard-ын дотоод зам зөвшөөрөгдөнө:
+     *   - '/'-ээр эхэлнэ, гэхдээ '//' биш (protocol-relative нь өөр домэйн)
+     *   - mount path-аар ('/dashboard/') эхэлнэ
+     *   - login хуудас өөрөө биш (redirect гогцоо үүсгэхээс сэргийлнэ)
+     *   - хяналтын тэмдэгтгүй, 512 тэмдэгтээс богино
+     *
+     * Critical (English): never redirect to this value without the whitelist
+     * above. It arrives from the query string, so anything looser turns the
+     * login page into an open redirect and a phishing vector.
+     *
+     * @return string Browser-т өгөх бүтэн зам, эсвэл '' (буцах зам байхгүй)
+     */
+    private function resolveReturnPath(): string
+    {
+        $return = $this->getQueryParams()['return'] ?? '';
+        if (!\is_string($return) || $return === '' || \strlen($return) > 512) {
+            return '';
+        }
+
+        // Хяналтын тэмдэгт (header injection, гажуудсан зам)
+        if (\preg_match('/[\x00-\x1F\x7F]/', $return)) {
+            return '';
+        }
+
+        // Backslash-ыг зарим browser '/'-тэй адил тайлдаг тул урьдчилан хөрвүүлж
+        // шалгана: '/\evil.com' нь '//evil.com' болж илэрнэ.
+        $return = \str_replace('\\', '/', $return);
+        if (!\str_starts_with($return, '/') || \str_starts_with($return, '//')) {
+            return '';
+        }
+
+        $mount = $this->getMountPath();
+        if ($mount === '' || !\str_starts_with($return, "$mount/")) {
+            return '';
+        }
+
+        $path = \explode('?', $return)[0];
+        if ($path === "$mount/login" || \str_starts_with($path, "$mount/login/")) {
+            return '';
+        }
+
+        return $this->getScriptPath() . $return;
     }
 
     /**
@@ -113,6 +169,10 @@ class LoginController extends \Dashboard\Controller
         if (!empty($flash)) {
             $login->set('flash_alert', $flash);
         }
+
+        // Нэвтэрсний дараа буцаж очих зам (JWTAuthMiddleware-ийн ?return=).
+        // Хүчингүй эсвэл байхгүй бол '' - login.html энэ үед home руу явуулна.
+        $login->set('return_url', $this->resolveReturnPath());
 
         // Spam хамгаалалтын timestamp + token (SpamProtectionTrait-ийн нэгдсэн логик)
         $ts = \time();

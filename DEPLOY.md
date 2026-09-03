@@ -11,7 +11,7 @@
 | XAMPP | PHP 8.2+ (`ext-gd`, `ext-intl`, `ext-pdo_mysql`, `ext-curl`, `ext-mbstring`) + Apache + MySQL |
 | Composer | `composer --version` ажиллах ёстой (`C:\ProgramData\ComposerSetup\bin\composer.bat` эсвэл `C:\xampp\php\composer.bat` - deploy script хоёуланг нь өөрөө олно) |
 | Git | Git for Windows (`C:\Program Files\Git\cmd\git.exe`) эсвэл GitHub Desktop - deploy script хоёуланг нь өөрөө олно |
-| SSL сертификат | `public_html/.htaccess` бүх хүсэлтийг https руу 301 чиглүүлдэг тул Apache-д codesaur.net-ийн сертификат заавал хэрэгтэй (win-acme / Let's Encrypt) |
+| SSL сертификат | Энэ серверийн Apache SSL хийхгүй - TLS-ийг урд талын nginx reverse proxy terminate хийж, энэ рүү энгийн http-ээр дамжуулна (7-р хэсэг) |
 
 ## 2. Эх кодыг татах
 
@@ -80,7 +80,20 @@ FLUSH PRIVILEGES;
 `public_html\public\` (Dashboard-аас upload хийсэн зураг, файл), `protected\`, `cache\`, `logs\`
 нь git-д ороогүй тул deploy хөндөхгүй. Backup-д `public_html\public\` + өгөгдлийн санг оруулна.
 
-## 7. Apache тохиргоо
+## 7. Сүлжээний бүтэц ба Apache тохиргоо
+
+Хүсэлтийн зам:
+
+```
+Хэрэглэгч --https--> nginx reverse proxy (66.181.175.192, TLS энд төгсдөг)
+                          |
+                          `--http--> энэ сервер (66.181.175.190) Apache :80
+                                        DocumentRoot: C:/xampp/htdocs/codesaur.net/public_html
+```
+
+`codesaur.net` болон `www.codesaur.net`-ийн DNS нь **proxy руу (`.192`)** заадаг бөгөөд
+энэ сервер рүү (`.190`) шууд хандахгүй. Сертификат proxy дээр байх тул энэ серверийн
+Apache-д SSL vhost ХЭРЭГГҮЙ - зөвхөн :80 vhost байна:
 
 `C:\xampp\apache\conf\extra\httpd-vhosts.conf`:
 
@@ -97,28 +110,31 @@ FLUSH PRIVILEGES;
     ErrorLog "logs/codesaur.net-error.log"
     CustomLog "logs/codesaur.net-access.log" combined
 </VirtualHost>
-
-<VirtualHost *:443>
-    ServerName codesaur.net
-    ServerAlias www.codesaur.net
-    DocumentRoot "C:/xampp/htdocs/codesaur.net/public_html"
-    <Directory "C:/xampp/htdocs/codesaur.net/public_html">
-        Options -Indexes +FollowSymLinks
-        AllowOverride All
-        Require all granted
-    </Directory>
-    SSLEngine on
-    SSLCertificateFile "C:/path/to/codesaur.net/fullchain.pem"
-    SSLCertificateKeyFile "C:/path/to/codesaur.net/privkey.pem"
-    ErrorLog "logs/codesaur.net-ssl-error.log"
-    CustomLog "logs/codesaur.net-ssl-access.log" combined
-</VirtualHost>
 ```
 
 - **Document root заавал `public_html/`** - `.env`, `application/`, `vendor/` түүнээс дээр байрлаж URL-аар хүрэшгүй.
 - `AllowOverride All` заавал: `public_html/.htaccess` нь www -> non-www, http -> https чиглүүлэлт болон `index.php` руу route хийдэг.
-- `httpd.conf`-д `Include conf/extra/httpd-vhosts.conf`, `LoadModule rewrite_module`, `LoadModule ssl_module` идэвхтэй эсэхийг шалгана. Дараа нь Apache-г restart.
-- DNS: `codesaur.net` болон `www` A бичлэгийг серверийн IP рүү заана.
+- `httpd.conf`-д `Include conf/extra/httpd-vhosts.conf`, `LoadModule rewrite_module` идэвхтэй эсэхийг шалгана. Дараа нь Apache-г restart.
+
+### АНХААР: https redirect ба X-Forwarded-Proto
+
+TLS proxy дээр төгсдөг тул Apache энэ түвшинд **үргэлж `HTTPS=off`** гэж хардаг.
+Иймд `public_html/.htaccess`-ийн https албадах redirect бүр
+`RewriteCond %{HTTP:X-Forwarded-Proto} !https` нөхцөлөөр хамгаалагдсан байх ёстой.
+Энэ хамгаалалтгүй бол хүсэлт бүр өөр рүүгээ 301 буцаж, төгсгөлгүй давталт
+(ERR_TOO_MANY_REDIRECTS) үүсч сайт бүхэлдээ унана - codesaur.net дээр яг ингэж
+унасан бөгөөд durvunberkh.mn дээр 2026-07-20-нд адил тохиолдол гарсан.
+Проксигоос `X-Forwarded-Proto: https` ирдэг нь баталгаажсан
+(`SessionMiddleware` үүнийг уншиж cookie-д `secure` тавьдаг).
+
+Шалгах:
+
+```powershell
+curl.exe -s -o NUL -w "code=%{http_code} redirects=%{num_redirects}\n" -L https://codesaur.net/
+```
+
+`code=200 redirects=0` байх ёстой. `redirects=5`, `code=301` гарвал дээрх хамгаалалт
+`.htaccess`-ээс хасагдсан гэсэн үг.
 
 ## 8. Авто-deploy - GitHub Webhook
 

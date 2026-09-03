@@ -1,8 +1,23 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
 
+  # www -> apex. Host өөрчлөгддөг тул давталт үүсгэхгүй, хамгаалалт шаардахгүй.
   RewriteCond %{HTTP_HOST} ^www\.(.+)$ [NC]
   RewriteRule ^ https://%1%{REQUEST_URI} [R=301,L]
+
+  # АНХААР: HTTPS-ийг урд талын proxy (nginx) terminate хийдэг тул Apache энэ
+  # түвшинд ҮРГЭЛЖ HTTPS=off гэж хардаг. Иймд доорх https албадах redirect-ийг
+  # заавал X-Forwarded-Proto-гоор хамгаална - энэ нөхцөлгүй бол ижил URL руугаа
+  # 301 буцаж, төгсгөлгүй redirect loop (ERR_TOO_MANY_REDIRECTS) үүсгэн сайтыг
+  # бүхэлд нь унагадаг (codesaur.net дээр яг ингэж унасан; durvunberkh.mn дээр
+  # 2026-07-20-нд). Дараагийн мөрийг хасаж БОЛОХГҮЙ.
+  #
+  # Critical (English): TLS is terminated by the reverse proxy in front of
+  # Apache, so HTTPS is always "off" at this layer. The forced-HTTPS redirect
+  # below MUST stay guarded by X-Forwarded-Proto - without that condition every
+  # request 301s back to itself in an infinite loop that takes the whole site
+  # down. Never drop the guard.
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
   RewriteCond %{HTTPS} off
   RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
 

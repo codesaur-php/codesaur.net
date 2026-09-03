@@ -1,0 +1,148 @@
+{% set lang = localization.code ?? 'en' %}
+<!DOCTYPE html>
+<html lang="{{ record_code ?? lang }}" data-copy-label="{{ t['doc_copy'] }}" data-copied-label="{{ t['doc_copied'] }}">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1.0, shrink-to-fit=no">
+        <title>{% if record_title is not empty and title is not empty %}{{ record_title ~ ' | ' ~ title }}{% elseif record_title is not empty %}{{ record_title }}{% else %}{{ title }}{% endif %}</title>
+        <meta name="description" content="{{ (record_description ?? description)|e }}">
+        <meta name="theme-color" content="#0000AA">
+        {% if favicon is not empty %}
+            <link rel="icon" href="{{ favicon }}" type="image/x-icon">
+        {% else %}
+            <link rel="icon" href="{{ index }}/assets/portal/logo.png" type="image/png">
+        {% endif %}
+        {% if apple_touch_icon is not empty %}<link rel="apple-touch-icon" href="{{ apple_touch_icon }}">{% endif %}
+        <link rel="alternate" type="application/rss+xml" title="{{ title }} RSS" href="{{ 'rss'|link }}">
+        <meta property="og:type" content="{{ record_title is not empty ? 'article' : 'website' }}">
+        <meta property="og:site_name" content="{{ title|e }}">
+        <meta property="og:title" content="{{ (record_title ?? title)|e }}">
+        <meta property="og:url" content="{{ current_url|e }}">
+        {% if (record_description ?? description) is not empty %}<meta property="og:description" content="{{ (record_description ?? description)|e }}">{% endif %}
+        {% if record_photo is not empty %}<meta property="og:image" content="{{ (record_photo starts with 'http' ? record_photo : base_url ~ record_photo)|e }}">{% endif %}
+        {% if record_photo is empty %}<meta property="og:image" content="{{ base_url ~ index }}/assets/portal/logo.png">{% endif %}
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+        <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+        <link rel="stylesheet" href="{{ index }}/assets/portal/portal.css?v=1">
+        <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+        <script defer src="{{ index }}/assets/portal/portal.js?v=1"></script>
+    </head>
+    <body class="tc-desktop">
+        <!-- Menu bar (Turbo C style) -->
+        <header class="tc-menubar">
+            <div class="tc-menubar-inner">
+                <a class="tc-menubar-brand" href="{{ 'home'|link }}">
+                    <img src="{{ index }}/assets/portal/logo.png" alt="codesaur">
+                    codesaur.net
+                </a>
+                <button class="tc-menu-toggle" type="button" aria-label="Menu">&#8801; {{ 'menu'|text }}</button>
+                <ul class="tc-menu">
+                    <li><a href="{{ 'home'|link }}" data-home="{{ 'home'|link }}"><span class="tc-menu-label">{{ t['nav_home'] }}</span></a></li>
+                    <li><a href="{{ 'raptor'|link }}" data-prefix="{{ 'raptor'|link }}"><span class="tc-menu-label">{{ t['nav_raptor'] }}</span></a></li>
+                    <li><a href="{{ 'packages'|link }}" data-prefix="{{ 'packages'|link }}"><span class="tc-menu-label">{{ t['nav_packages'] }}</span></a></li>
+                    <li><a href="{{ 'docs'|link }}" data-prefix="{{ 'docs'|link }}" data-hotkey="F1"><span class="tc-menu-label">{{ t['nav_docs'] }}</span></a></li>
+                    <li><a href="{{ 'archive'|link }}" data-prefix="{{ 'archive'|link }}"><span class="tc-menu-label">{{ t['nav_news'] }}</span></a></li>
+                    {% for menu in main_menu %}
+                        {% if menu['link'] is not empty %}
+                            {% set href = menu['link'] %}
+                        {% else %}
+                            {% set href = 'page'|link({'slug':menu['slug']}) %}
+                        {% endif %}
+                        {% if menu['submenu'] is not empty %}
+                            <li class="has-sub">
+                                <a href="{{ href }}"><span class="tc-menu-label">{{ menu['title']|raw }}</span> &#9662;</a>
+                                <ul>
+                                    {% for sub in menu['submenu'] %}
+                                        {% if sub['link'] is not empty %}
+                                            {% set subhref = sub['link'] %}
+                                        {% else %}
+                                            {% set subhref = 'page'|link({'slug':sub['slug']}) %}
+                                        {% endif %}
+                                        <li><a href="{{ subhref }}"><span class="tc-menu-label">{{ sub['title']|raw }}</span></a></li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
+                        {% else %}
+                            <li><a href="{{ href }}" data-prefix="{{ href }}"><span class="tc-menu-label">{{ menu['title']|raw }}</span></a></li>
+                        {% endif %}
+                    {% endfor %}
+                    <li><a href="{{ 'contact'|link }}" data-prefix="{{ 'contact'|link }}"><span class="tc-menu-label">{{ t['nav_contact'] }}</span></a></li>
+
+                    <li class="tc-menu-right"><a href="{{ github_org }}" target="_blank" rel="noopener" title="{{ t['nav_github'] }}"><i class="bi bi-github"></i><span class="tc-menu-label d-lg-none ms-2">{{ t['nav_github'] }}</span></a></li>
+                    {% if localization.language|length > 1 %}
+                        {% for code,language in localization.language %}
+                            <li><a class="{{ code == lang ? 'active' : '' }}" href="{{ 'language'|link({'code': code}) }}" title="{{ language['title'] }}">{{ code|upper }}</a></li>
+                        {% endfor %}
+                    {% endif %}
+                    <li class="tc-menu-search">
+                        <form class="d-flex" method="GET" action="{{ 'search'|link }}">
+                            <input type="text" name="q" placeholder="{{ 'search'|text }}..." minlength="2" required>
+                            <button type="submit" aria-label="{{ 'search'|text }}"><i class="bi bi-search"></i></button>
+                        </form>
+                    </li>
+                </ul>
+            </div>
+        </header>
+
+        <!-- Content -->
+        <main class="tc-screen" id="content">
+            {% if urgent is not null and urgent is not empty %}
+                <div class="tc-alert"><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ urgent }}</div>
+            {% endif %}
+            {% if layout is defined and layout == 'portal' %}
+                {{ content }}
+            {% else %}
+                <div class="tc-dialog tc-legacy">
+                    <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+                    <span class="tc-dialog-title">{{ record_title ?? title }}</span>
+                    {{ content }}
+                </div>
+            {% endif %}
+        </main>
+
+        <!-- Footer note (on the desktop) -->
+        <div class="tc-footer-note">
+            <div>
+                {{ copyright }}
+                {% if email is not empty %} &middot; <a href="mailto:{{ email|e }}">{{ email }}</a>{% endif %}
+                {% if phone is not empty %} &middot; <a href="tel:{{ phone|e }}">{{ phone }}</a>{% endif %}
+            </div>
+            <div>
+                {% for key, pkg in portal_packages %}<a href="{{ 'package'|link({'key': key}) }}">{{ pkg['title'] }}</a>{% if not loop.last %} &middot; {% endif %}{% endfor %}
+            </div>
+            <div>
+                {% for item in featured_pages %}
+                    {% if item['link'] is not empty %}
+                        {% set href = item['link'] %}
+                    {% else %}
+                        {% set href = 'page'|link({'slug':item['slug']}) %}
+                    {% endif %}
+                    <a href="{{ href }}">{{ item['title']|raw }}</a> &middot;
+                {% endfor %}
+                <a href="{{ 'sitemap'|link }}">{{ 'sitemap'|text }}</a> &middot;
+                <a href="{{ 'rss'|link }}">RSS</a>
+                {% if config['facebook'] is not empty %} &middot; <a href="{{ config['facebook'] }}" target="_blank" rel="noopener"><i class="bi bi-facebook"></i></a>{% endif %}
+                {% if config['youtube'] is not empty %} &middot; <a href="{{ config['youtube'] }}" target="_blank" rel="noopener"><i class="bi bi-youtube"></i></a>{% endif %}
+            </div>
+        </div>
+
+        <!-- Status bar (Turbo C style) -->
+        <footer class="tc-statusbar">
+            <div class="tc-statusbar-inner">
+                <a href="{{ 'docs'|link }}"><span class="tc-key">F1</span>{{ t['nav_docs'] }}</a>
+                <a href="{{ 'packages'|link }}"><span class="tc-key">F2</span>{{ t['nav_packages'] }}</a>
+                <a href="{{ 'raptor'|link }}"><span class="tc-key">F3</span>{{ t['nav_raptor'] }}</a>
+                <a href="{{ github_org }}" target="_blank" rel="noopener"><span class="tc-key">F9</span>GitHub</a>
+                <a href="{{ packagist_user }}" target="_blank" rel="noopener"><span class="tc-key">F10</span>Packagist</a>
+                <!-- '/dashboard' hardcode - index.php дахь Dashboard app-ийн mount path-тай
+                     тааруулж байх ёстой. Mount-ийг өөрчилбөл энэ линкийг ч мөн шинэчилнэ. -->
+                <a href="{{ index }}/dashboard" target="_blank"><span class="tc-key">F12</span>{{ 'dashboard'|text }}</a>
+                <span class="tc-status-right d-none d-md-inline">| {{ record_title ?? title }}</span>
+            </div>
+        </footer>
+    </body>
+</html>

@@ -1,0 +1,279 @@
+# codesaur.net
+
+codesaur-php экосистемийн (Raptor framework болон бүх багцууд) албан ёсны портал - Raptor дээр бүтээгдсэн, монгол/англи хоёр хэлтэй.  
+The official portal of the codesaur-php ecosystem (Raptor framework and all packages) - built on Raptor, bilingual mn/en.
+
+- Портал модуль / Portal module: `application/web/portal/` (`Web\Portal`) - Raptor, багцууд, баримт бичиг (`/raptor`, `/packages`, `/package/{key}`, `/docs/{key}/{doc}`)
+- Баримт бичиг `vendor/codesaur/*/docs/` болон төслийн `docs/` дахь markdown файлуудаас шууд рендерлэгдэнэ - `composer update` хийхэд автоматаар шинэчлэгдэнэ
+- Загвар / Theme: Turbo C IDE (`public_html/assets/portal/`)
+- Deploy: Windows сервер, GitHub webhook -> `git pull` - [DEPLOY.md](DEPLOY.md)
+
+Доорх нь Raptor framework-ийн ерөнхий танилцуулга. / Below is the general Raptor framework introduction.
+
+---
+
+# 🦖 codesaur/raptor
+
+[![PHP Version](https://img.shields.io/badge/php-%5E8.2.1-777BB4.svg?logo=php)](https://www.php.net/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+Цэвэр архитектуртай объект хандалттай веб хөгжүүлэлтийн фреймворк  
+Clean architecture object-oriented web development framework
+
+---
+
+## Агуулга / Table of Contents
+
+1. [Монгол](#1-монгол-тайлбар) | 2. [English](#2-english-description) | 3. [Getting Started](#3-getting-started)
+
+---
+
+## 1. Монгол тайлбар
+
+`codesaur/raptor` нь PSR стандартууд (PSR-3, PSR-4, PSR-7, PSR-11, PSR-12, PSR-14, PSR-15, PSR-16) дээр суурилсан, **олон давхаргат архитектуртай**, **олон байгууллагын (multi-tenant)**, **бүрэн CMS боломжтой** PHP веб фреймворк юм.
+
+Фреймворк нь анхдагч байдлаараа **Web** (нийтийн вебсайт) болон **Dashboard** (админ панель) гэсэн хоёр апп-тай ирдэг бөгөөд developer хэрэгцээндээ тааруулан хэдэн ч апп давхарга нэмж болно. codesaur экосистемийн бусад packages-тэй хамтран ажиллана.
+
+### Гол боломжууд
+
+- PSR-7/PSR-15 middleware суурьтай архитектур
+- JWT + Session нэвтрэлт баталгаажуулалт
+- Олон байгууллагын (multi-tenant) RBAC эрхийн удирдлага
+- Олон хэл дэмжлэг (Localization)
+- CMS модулиуд: Мэдээ, Хуудас, Файл, Лавлах, Тохиргоо
+- Дэлгүүр модуль: Бүтээгдэхүүн, Захиалга, Үнэлгээ (e-commerce)
+- MySQL, PostgreSQL алийг нь ч дэмжинэ
+- SQL файл суурьтай өгөгдлийн сангийн migration систем
+- codesaur/template engine
+- OpenAI интеграци (moedit editor)
+- Зураг optimize хийх (GD)
+- PSR-3 лог систем
+- И-мэйл (Brevo API, SMTP, PHP mail), Discord webhook мэдэгдэл
+- PSR-14 Event Dispatcher систем
+- SEO: Хайлт, Sitemap, XML Sitemap, RSS feed
+- Спам хамгаалалт (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
+- CSRF хамгаалалт (CsrfMiddleware, csrfFetch)
+- Shared hosting / WAF тохиромж (cPanel/LiteSpeed/mod_security): HTTP method override, body encoding
+- File-based DB cache (PSR-16 SimpleCache) - автомат invalidation-тэй
+- Устгасан бичлэгийг сэргээх Trash систем
+- Dashboard sidebar badge систем (уншаагүй үйлдлийн тоолуур)
+- Админ имэйл мэдэгдэл: мессеж, захиалга, сэтгэгдэл, үнэлгээ (суваг тус бүрд тохируулах)
+
+### Дэлгэрэнгүй мэдээлэл
+
+- [Бүрэн танилцуулга](docs/mn/README.md) - Суулгах, тохируулах, архитектур, хэрэглээ
+- [API тайлбар](docs/mn/api.md) - Бүх модуль, класс, методуудын дэлгэрэнгүй
+
+---
+
+## 2. English Description
+
+`codesaur/raptor` is a **multi-layered**, **multi-tenant**, **full-featured CMS** PHP web framework built on PSR standards (PSR-3, PSR-4, PSR-7, PSR-11, PSR-12, PSR-14, PSR-15, PSR-16).
+
+The framework ships with two apps by default - **Web** (public website) and **Dashboard** (admin panel) - and a developer can add as many app layers as the project needs. It works together with other packages in the codesaur ecosystem.
+
+### Key Features
+
+- PSR-7/PSR-15 middleware-based architecture
+- JWT + Session authentication
+- Multi-tenant organizations with RBAC (Role-Based Access Control)
+- Multi-language support (Localization)
+- CMS modules: News, Pages, Files, References, Settings
+- Shop module: Products, Orders, Reviews (e-commerce)
+- MySQL or PostgreSQL supported
+- SQL file-based database migration system
+- codesaur/template engine
+- OpenAI integration (moedit editor)
+- Image optimization (GD)
+- PSR-3 logging system
+- Email (Brevo API, SMTP, PHP mail), Discord webhook notifications
+- PSR-14 Event Dispatcher system
+- SEO: Search, Sitemap, XML Sitemap, RSS feed
+- Spam protection (honeypot, HMAC token, rate limiting, Cloudflare Turnstile)
+- CSRF protection (CsrfMiddleware, csrfFetch)
+- Shared hosting / WAF compatibility (cPanel/LiteSpeed/mod_security): HTTP method override, body encoding
+- File-based DB cache (PSR-16 SimpleCache) with auto-invalidation
+- Trash system for deleted records recovery
+- Dashboard sidebar badge system (unseen activity counters)
+- Admin email notifications for contact messages, orders, comments, reviews (per-channel config)
+
+### Documentation
+
+- [Full Documentation](docs/en/README.md) - Installation, configuration, architecture, usage
+- [API Reference](docs/en/api.md) - All modules, classes, and methods
+
+---
+
+## 3. Getting Started
+
+### Requirements
+
+- PHP **8.2.1+**
+- Composer
+- MySQL or PostgreSQL
+- PHP extensions: `ext-gd`, `ext-intl`
+
+### Installation
+
+```bash
+composer create-project codesaur/raptor my-project
+```
+
+### Configuration
+
+`composer create-project`, `git clone` + `composer install` аль ч тохиолдолд `.env` файл автоматаар үүсэх бөгөөд `RAPTOR_JWT_SECRET` мөн автоматаар generate хийгдэнэ (байгаа `.env` болон secret-д хэзээ ч хүрэхгүй). Хэрэв `.env` үүсээгүй бол гараар хуулна:
+
+Whether via `composer create-project` or `git clone` + `composer install`, the `.env` file is auto-created and `RAPTOR_JWT_SECRET` is auto-generated (an existing `.env` and secret are never touched). If `.env` was not created, copy it manually:
+
+```bash
+cp docs/conf.example/.env.example .env
+```
+
+Server configuration examples / Серверийн тохиргооны жишээ: [`docs/conf.example/`](docs/conf.example/)
+
+> **Document root MUST be `public_html/`** (never the project root) - everything else (`.env`, `application/`, `protected/`, `vendor/`, ...) lives above it and must stay unreachable by URL. This is the primary, server-agnostic protection on both Apache and Nginx.
+> **Document root заавал `public_html/` байх ёстой** (project root биш) - бусад бүх зүйл (`.env`, `application/`, `protected/`, `vendor/`, ...) түүнээс дээр байрладаг тул URL-аар хүрэшгүй байх ёстой. Энэ нь Apache, Nginx хоёуланд server-аас үл хамаарах үндсэн хамгаалалт.
+
+Гол тохиргоонууд / Key configuration:
+
+```env
+# Environment (development / production)
+CODESAUR_APP_ENV=development
+
+# Database
+RAPTOR_DB_HOST=localhost
+RAPTOR_DB_NAME=raptor
+RAPTOR_DB_USERNAME=root
+RAPTOR_DB_PASSWORD=
+
+# JWT (secret is auto-generated)
+RAPTOR_JWT_ALGORITHM=HS256
+RAPTOR_JWT_LIFETIME=2592000
+
+# WAF compatibility (mod_security)
+RAPTOR_WAF_BODY_ENCODING=true
+```
+
+> **Create the empty database yourself** - Raptor never creates the database itself, but all tables and initial seed data ARE auto-created on first run, so never create tables by hand.
+> **Хоосон өгөгдлийн санг developer өөрөө үүсгэнэ** - Raptor санг автоматаар үүсгэдэггүй, харин доторх бүх хүснэгт болон анхны seed өгөгдлийг анх ажиллахдаа автоматаар үүсгэдэг тул хүснэгтүүдийг гараар үүсгэх шаардлагагүй.
+
+### Quick Architecture
+
+```
+public_html/index.php
+ |-- /dashboard/* -> Dashboard\Application (Admin Panel)
+ |    |-- Middleware stack (MethodOverride, BodyEncoding, Session, JWT, Container, Localization, Settings; CSRF per-route)
+ |    |-- Routers (one per feature module, registered in Application.php)
+ |    \-- Controllers -> Templates
+ |
+ \-- /* -> Web\Application (Public Website)
+      |-- Middleware stack (Session, Localization, Settings)
+      |-- WebRouter (/, /page/{id}, /news/{id}, /contact, /language/{code})
+      \-- TemplateController -> Templates
+```
+
+**Request Flow:** index.php -> Application -> Middleware chain -> Router match -> Controller -> Response
+
+### Directory Structure
+
+```
+raptor/
+|-- application/             # PHP application code (package-by-feature modules)
+|   |-- dashboard/           # Admin panel application (also hosts the shared platform modules used by web)
+|   \-- web/                 # Public website application
+|-- public_html/             # Document root (index.php entry point, assets/)
+|-- database/
+|   \-- migrations/          # SQL migration files
+|-- tests/                   # PHPUnit tests (unit, integration)
+|-- docs/                    # Documentation (en/, mn/, conf.example/)
+|-- .github/
+|   \-- workflows/           # CI code quality checks + auto deploy
+|-- logs/                    # Error logs
+|-- cache/                   # Framework file cache (PSR-16)
+|-- protected/               # Protected files (project uploads outside docroot)
+|-- composer.json            # Dependencies
+|-- phpunit.xml              # PHPUnit configuration
+\-- LICENSE                  # MIT License
+```
+
+Each feature module is a single folder bundling its Controller, Model and
+templates. Module locations and classes are documented per module in
+`docs/en/README.md` / `docs/mn/README.md` (section 6).
+
+> **`vendor/`-оос бусад бүх директор хөгжүүлэгчийн мэдэлд.** `composer create-project`-оор
+> татсаны дараа `application/`, `public_html/`, `database/`, `tests/`, `docs/`,
+> тохиргооны файлууд бүгд таны төслийн хэсэг болж, хэрэгцээ шаардлагадаа тааруулан
+> бүрэн өөрчлөх, устгах, шинээр бичих боломжтой. Тусдаа "framework core" гэсэн
+> давхарга байхгүй - `application/` дотор `dashboard/`, `web/` гэсэн хоёр апп
+> байх бөгөөд хоёулаа таны төслийн энгийн код. Үндсэн (default) codebase нь
+> хөгжүүлэгчийн нийтлэг хэрэгцээг хангасан суурь тул өөрийн нарийвчилсан хэрэгцээ
+> шаардлагаа кодод шууд шингээгээрэй. Зөвхөн `vendor/*` packages нь Composer-ээр удирдагдах
+> dependency тул гар хүрэхгүй (`composer update`-ээр шинэчилнэ).
+>
+> **Everything outside `vendor/` is yours.** After `composer create-project`,
+> `application/`, `public_html/`, `database/`, `tests/`, `docs/` and the config
+> files all become part of your project - freely modify, delete, or rewrite them to
+> fit your needs. There is no separate "framework core" layer: `application/` holds
+> two apps, `dashboard/` and `web/`, and both are plain project code.
+> The default codebase is a baseline covering a developer's common needs,
+> so adapt the code directly to your own detailed requirements. Only the `vendor/*` packages
+> are Composer-managed dependencies (updated via `composer update`); leave those untouched.
+
+### Testing / Тест
+
+PHPUnit 11 суурьтай unit болон integration тестүүдтэй.
+Includes PHPUnit 11 test suite with unit and integration tests.
+
+```bash
+composer test              # Бүх тест / All tests
+composer test:unit         # Unit тест / Unit tests only
+composer test:integration  # Integration тест / Integration tests only
+```
+
+Integration тест `.env.testing` файлын тохиргоог ашиглан тусдаа test database дээр ажиллана. Тест бүр transaction дотор ажиллаж, дуусахад rollback хийнэ.
+
+Integration tests use `.env.testing` config with a separate test database. Each test runs in a transaction and rolls back on teardown.
+
+---
+
+## Why "Raptor"?
+
+Дэлхийд анх удаа **Монголын говиос** (1923) олдсон **Velociraptor** хэмээх гайхалтай динозаврыг бэлэгдэж өгсөн нэр. Зохиогч **Наранхүү** динозавр, байгалийн түүхийг сонирхон уншиж судалдаг хүн. **codesaur** гэдэг нь `code` + `saur` - тэрбээр 1997 оноос C хэл дээр эхлэн програм зохиосон өөрийгөө "хуучин цагийн код бичигч динозавр" хэмээн хөгжилтэйгээр нэрлэсэн билээ.
+
+The name honors the remarkable **Velociraptor**, a dinosaur whose fossils were first unearthed in **Mongolia's Gobi Desert** (1923). Its author, **Narankhuu**, is a keen reader on dinosaurs and natural history. **codesaur** is his own playful name - `code` + `saur` - a nod to writing C since 1997: an old-school "coding dinosaur".
+
+---
+
+## Acknowledgements
+
+Миний хөгжүүлж буй энэ framework-т санхүүгийн дэмжлэг үзүүлж, зарим хэрэгтэй санал хэлж байсан [**Gerege Systems LLC**](https://gerege.com/) болон түүний үүсгэн байгуулагч **Ц.Эрдэнэбат** багшид талархал илэрхийлье.
+
+Thanks to [**Gerege Systems LLC**](https://gerege.com/) and its founder **Erdenebat Ts** for their financial support and valuable input during the development of this framework.
+
+---
+
+## Changelog
+
+- [CHANGELOG.md](CHANGELOG.md) - Version history
+
+## Community
+
+- [Discussions](https://github.com/orgs/codesaur-php/discussions) - Ask questions, share ideas, get help
+
+## Contributing & Security
+
+- [Contributing Guide](.github/CONTRIBUTING.md)
+- [Security Policy](.github/SECURITY.md)
+
+## License
+
+This project is licensed under the MIT License.
+
+## Author
+
+**Narankhuu**  
+Email: codesaur@gmail.com  
+Phone: +976 99883763  
+Web: https://github.com/codesaur
+
+**codesaur ecosystem:** https://codesaur.net

@@ -1,0 +1,126 @@
+<?php
+
+namespace Web;
+
+use Psr\Http\Message\ResponseInterface;
+
+/**
+ * Class Application
+ * ---------------------------------------------------------
+ * Raptor Framework - Веб давхаргын үндсэн Application класс.
+ *
+ * Энэ класс нь таны веб системийн "үндсэн эхлэл" бөгөөд
+ * HTTP Layer дээр хэрэгжих бүх Middleware болон Router-ийг
+ * зөв дарааллаар бүртгэж ажиллуулдаг.
+ *
+ * Middleware-үүдийг дарааллаар бүртгэн идэвхжүүлнэ  
+ * Template хөдөлгүүрийн Exception Handler ашиглана  
+ * Өгөгдлийн сангийн холболтыг автоматаар үүсгэнэ  
+ * Session, Localization, Settings зэрэг системийн суурь
+ *   давхаргыг идэвхжүүлнэ  
+ * Эцэст нь вебийн үндсэн маршрутыг бүртгэнэ
+ *
+ * ---------------------------------------------------------
+ * Middleware-ийн дарааллын тайлбар
+ * ---------------------------------------------------------
+ * 1) **Template\ExceptionHandler**
+ *    - Template ашиглан error page рендерлэх
+ *    - Хэрвээ template файл байхгүй бол кодын default ExceptionHandler ажиллана
+ *
+ *    PDO холболт нь application-ий entry point дээр үүсгэгдэж request-д
+ *    attribute болгон inject хийгдсэн байна. Web ба Dashboard аль аль
+ *    нь нэг л холболтыг (`\Dashboard\DatabaseConnection`) ашиглана.
+ *
+ * 2) **MethodOverrideMiddleware**
+ *    - PUT/PATCH/DELETE verb-ийг X-HTTP-Method-Override header-аас сэргээх (WAF)
+ *    - "Request normalization" тул Session/routing-аас өмнө ажиллана
+ *
+ * 3) **BodyEncodingMiddleware**
+ *    - base64 body decode (WAF body-inspection-ийн шийдэл)
+ *    - Header-gated тул web-ийн ердийн form-д нөлөөлөхгүй
+ *
+ * 4) **ContainerMiddleware**
+ *    - Dependency Injection Container-г request attributes-д inject хийнэ
+ *    - Service factory-ууд PDO-г request attribute-аас (`pdo`) шууд уншина
+ *
+ * 5) **SessionMiddleware**
+ *    - PHP session удирдах
+ *    - Хэрэглэгчийн authentication / session-based data хадгалах
+ *
+ * 6) **LocalizationMiddleware**
+ *    - Системийн хэл (mn/en/...) тодорхойлох
+ *    - Template-д localization объект дамжуулах
+ *
+ * 7) **SettingsMiddleware**
+ *    - System settings (branding, favicon, footer, title, зэрэг)
+ *    - Хуудсуудад дамжуулах болно
+ *
+ * ---------------------------------------------------------
+ * Router бүртгэх
+ * ---------------------------------------------------------
+ * `WebRouter` - вэбийн үндсэн хуудсуудын маршрут
+ *    / -> /home, news, language гэх мэт
+ * `Portal\PortalRouter` - codesaur.net порталын маршрут
+ *    /raptor, /packages, /package/{key}, /docs/{key}/{doc}
+ *
+ * Хэрвээ та өөр Router нэмэх бол:
+ *
+ *      $this->use(new Shop\ShopRouter());
+ *      $this->use(new News\NewsRouter());
+ *      $this->use(new Auth\AuthRouter());
+ *
+ * гэх мэтээр нэмж болно.
+ *
+ * ---------------------------------------------------------
+ * Хөгжүүлэгчид зориулсан тэмдэглэл
+ * ---------------------------------------------------------
+ * Application нь Middleware-үүдийг **өргөтгөх боломжтой**
+ * Router-уудыг хүссэнээрээ бүлэглэн зохион байгуулж болно
+ *
+ * @package Web
+ */
+class Application extends \codesaur\Http\Application\Application
+{
+    /**
+     * Web Application-г эхлүүлж middleware, router-уудыг бүртгэх.
+     *
+     * @param ResponseInterface $response Handler ResponseInterface биш төрөл
+     *        буцаасан үед fallback болгон ашиглах хариуны prototype (base руу дамжина)
+     */
+    public function __construct(ResponseInterface $response)
+    {
+        parent::__construct($response);
+
+        // Template тулгуурласан Error Handler
+        $this->use(new Template\ExceptionHandler());
+
+        // HTTP method override + WAF body decode (shared hosting compat).
+        // "Request normalization" тул Session/routing зэрэг method/body-д
+        // тулгуурладаг давхаргаас өмнө ажиллана. Header-gated тул web-ийн ердийн
+        // form-д нөлөөлөхгүй; ирээдүйд web талд csrfFetch-төстэй wrapper нэмбэл
+        // автоматаар хамаарна.
+        $this->use(new \Dashboard\MethodOverrideMiddleware());
+        $this->use(new \Dashboard\BodyEncodingMiddleware());
+
+        // Container middleware
+        $this->use(new \Dashboard\ContainerMiddleware());
+
+        // Session middleware
+        $this->use(new \Dashboard\SessionMiddleware(
+            fn(string $path, string $method): bool =>
+                \str_starts_with($path, '/session/')
+        ));
+
+        // Localization middleware (mn/en ...)
+        $this->use(new \Dashboard\Localization\LocalizationMiddleware('WEB_LANGUAGE_CODE'));
+
+        // System settings middleware (branding, favicon, footer...)
+        $this->use(new \Dashboard\Content\SettingsMiddleware());
+
+        // Вебийн үндсэн маршрут
+        $this->use(new WebRouter());
+
+        // codesaur.net портал: Raptor, багцууд, баримт бичиг
+        $this->use(new Portal\PortalRouter());
+    }
+}

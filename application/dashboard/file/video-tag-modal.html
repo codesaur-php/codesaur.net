@@ -1,0 +1,60 @@
+<!--
+    Video tag embed code modal.
+    Энэ modal нь видео файлыг HTML-д байрлуулахад шаардлагатай
+    <video> tag-ийг автоматаар үүсгэн харуулдаг.
+
+    * Relative embed   -> зөвхөн файл руу харьцангуй зам
+    * Absolute embed   -> бүрэн URL (host + path)
+
+    copy товч -> copyContent(id) функцээр тухайн <pre> блокийн
+    текстийг clipboard руу хуулахад ашиглана.
+-->
+
+<div class="modal-lg modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <h3 class="modal-title fs-6 text-uppercase text-dark">
+                <i class="bi bi-magic"></i> Video embed code
+            </h3>
+
+            <!-- Modal хаах товч -->
+            <button class="btn-close"
+                    type="button"
+                    data-bs-dismiss="modal"
+                    aria-label="{{ 'close'|text|e }}">
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="modal-body">
+            <!-- Relative video embed code -->
+            <strong>Relative:</strong>
+            <!-- <pre id="relative"> хэсгийн текстийг хуулна -->
+            <a class="btn btn-sm btn-dark" onclick="copyContent('relative');">copy</a>
+            <!-- Харьцангуй URL бүхий <video> tag (vanilla HTML) -->
+            <pre class="border border-dark bg-secondary text-light"
+                 id="relative"
+                 style="white-space:pre-wrap">{{ ('<video src="' ~ record['path'] ~ '" controls style="max-width: 100%;"></video>')|e }}</pre>
+
+            <hr>
+
+            <!-- Absolute video embed code -->
+            <strong>Absolute:</strong>
+            <a class="btn btn-sm btn-dark" onclick="copyContent('absolute');">copy</a>
+            <!-- Host + path -> бүрэн URL бүхий embed код (vanilla HTML) -->
+            <pre class="border border-dark bg-secondary text-light"
+                 id="absolute"
+                 style="white-space:pre-wrap">{{ ('<video src="' ~ host ~ record['path'] ~ '" controls style="max-width: 100%;"></video>')|e }}</pre>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer">
+            <button class="btn btn-dark"
+                    data-bs-dismiss="modal"
+                    type="button">
+                {{ 'close'|text }}
+            </button>
+        </div>
+    </div>
+</div>

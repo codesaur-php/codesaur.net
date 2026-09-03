@@ -1,0 +1,30 @@
+<?php
+
+namespace Dashboard\Home;
+
+use Psr\Log\LogLevel;
+
+/**
+ * Class HomeController
+ * ------------------------------------------------------------------
+ * Dashboard-ийн нүүр хуудасны контроллер.
+ *
+ * @package Dashboard\Home
+ */
+class HomeController extends \Dashboard\Controller
+{
+    use \Dashboard\Template\DashboardTrait;
+
+    /**
+     * Dashboard-ийн нүүр хуудсыг харуулах.
+     */
+    public function index()
+    {
+        $this->dashboardTemplate(
+            __DIR__ . '/home.html',
+            ['web_log_stats' => $this->template(__DIR__ . '/web-log-stats.html')]
+        )->render();
+
+        $this->log('dashboard', LogLevel::NOTICE, 'Нүүр хуудсыг уншиж байна');
+    }
+}

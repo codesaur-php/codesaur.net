@@ -1,0 +1,235 @@
+<!--
+  Rbac-alias.HTML
+  ------------------------------------------------------------------
+  RBAC Role / Permission matrix ui.
+ 
+  Controller: RBACController::alias()
+  Route: get /dashboard/rbac
+ 
+  Variables:
+    alias           - RBAC alias (e.g. system)
+    title           - Organization name
+    roles           - Roles array
+    permissions     - Permissions array
+    role_permission - role_id -> permission_id mapping
+ 
+  js: SweetAlert2 (inherited from dashboard)
+ -->
+
+<style>
+    .requesting {
+        z-index: 2000; display: none; position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        cursor: wait; border: none;
+    }
+    .requesting-bg {
+        width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.6);
+    }
+    .requesting-content {
+        position: absolute; top: 40%; left: 50%;
+        transform: translateX(-50%);
+        padding: 1rem 2rem; text-align: center;
+        color: #0d6efd; border-radius: 8px;
+        border: 2px solid #0d6efd; background: #fff;
+    }
+
+    .role-card { transition: box-shadow 0.2s; }
+    .role-card:hover { box-shadow: 0 0.25rem 0.75rem rgba(0,0,0,0.15); }
+    .perm-check { cursor: pointer; }
+    .perm-check:disabled { cursor: not-allowed; opacity: 0.5; }
+    .perm-item {
+        display: flex; align-items: center; gap: 0.5rem;
+        padding: 0.35rem 0; border-bottom: 1px solid #f0f0f0;
+    }
+    .perm-item:last-child { border-bottom: none; }
+    .perm-name { font-family: monospace; font-size: 0.85rem; }
+    .perm-desc { font-size: 0.75rem; color: #6c757d; }
+    .role-badge { font-size: 0.7rem; }
+</style>
+
+<!-- AJAX overlay -->
+<div class="requesting">
+    <div class="requesting-bg"></div>
+    <div class="requesting-content">
+        <span class="spinner-border" role="status"></span>
+        <h6>Processing request ...</h6>
+    </div>
+</div>
+
+<!-- Header -->
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+    <h5 class="text-danger text-uppercase mb-0">
+        <i class="bi bi-shield-fill-check"></i>
+        RBAC / {{ alias ~ (title is empty ? '' : ' / ' ~ title) }}
+    </h5>
+    <div class="d-flex gap-1 flex-wrap mt-1 mt-md-0">
+        <button class="btn btn-sm btn-info text-white"
+            href="{{ 'rbac-insert-role'|link({'alias': alias}) }}?title={{ title|e }}"
+            data-bs-target="#static-modal" data-bs-toggle="modal" type="button">
+            <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Add Role</span>
+        </button>
+        <button class="btn btn-sm btn-success"
+            href="{{ 'rbac-insert-permission'|link({'alias': alias}) }}?title={{ title|e }}"
+            data-bs-target="#static-modal" data-bs-toggle="modal" type="button">
+            <i class="bi bi-plus-circle"></i> <span class="d-none d-sm-inline">Add Permission</span>
+        </button>
+        <a class="btn btn-sm btn-outline-secondary"
+            href="{{ 'manual-view'|link({'file': 'rbac-manual-' ~ localization.code ~ '.html'}) }}"
+            title="{{ 'manual'|text }}" target="_blank">
+            <i class="bi bi-question-circle"></i>
+        </a>
+    </div>
+</div>
+
+<!-- Permission count summary -->
+<div class="text-muted small mb-3">
+    {{ roles|length }} {{ 'role'|text }}{{ roles|length > 1 ? 's' : '' }},
+    {{ permissions|length }} permission{{ permissions|length > 1 ? 's' : '' }}
+</div>
+
+<!-- Role cards -->
+<div class="row g-3">
+    {% for role in roles %}
+    <div class="col-12 col-lg-6">
+        <div class="card role-card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center py-2">
+                <div>
+                    <strong class="text-danger">{{ alias }}_{{ role['name'] }}</strong>
+                    <span class="perm-desc d-block">{{ role['description'] }}</span>
+                </div>
+                <div>
+                    <span class="badge bg-primary role-badge"
+                          id="count-{{ role['id'] }}">0</span>
+                    <span class="perm-desc">/ {{ permissions|length }}</span>
+                </div>
+            </div>
+            <div class="card-body p-2" style="max-height: 400px; overflow-y: auto;">
+                {% for permission in permissions %}
+                <div class="perm-item px-2">
+                    <input class="form-check-input perm-check"
+                        type="checkbox"
+                        id="rp-{{ role['id'] }}-{{ permission['id'] }}"
+                        data-role="{{ role['id'] }}"
+                        data-perm="{{ permission['id'] }}"
+                        {% if role_permission[role['id']] is defined and role_permission[role['id']][permission['id']] is defined %}checked{% endif %}>
+                    <label class="flex-grow-1" for="rp-{{ role['id'] }}-{{ permission['id'] }}">
+                        <span class="perm-name">{{ alias }}_{{ permission['name'] }}</span>
+                        <span class="perm-desc d-none d-md-inline ms-1">{{ permission['description'] }}</span>
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="card-footer py-1 text-end">
+                <button class="btn btn-sm btn-outline-primary select-all-btn"
+                    data-role="{{ role['id'] }}" title="Select all">
+                    <i class="bi bi-check-all"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary deselect-all-btn"
+                    data-role="{{ role['id'] }}" title="Deselect all">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if user.can('system_logger') %}
+<!-- Log section -->
+<div class="mt-4 bg-secondary bg-opacity-25 border rounded p-3">
+    <label class="form-label fw-bolder">
+        {{ 'log'|text }} <i class="bi bi-clock-history"></i>
+    </label>
+    <div class="spinner-grow mt-3" role="status" style="display:none">
+        <span class="visually-hidden">Loading logs...</span>
+    </div>
+    <ul class="list-group logger-protocol" id="logger-dashboard"
+        data-retrieve="{{ 'logs-retrieve'|link }}"
+        data-view="{{ 'logs-view'|link }}"
+        data-context='{"action":"rbac-*","alias":"{{ alias }}"}'
+        style="max-height:240px; overflow-y:auto">
+    </ul>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const apiUrl = `{{ 'rbac-set-role-permission'|link({'alias':alias}) }}`;
+    const requesting = document.querySelector('div.requesting');
+
+    /* Update badge counts */
+    function updateCounts() {
+        {% for role in roles %}
+        {
+            const checked = document.querySelectorAll(
+                'input.perm-check[data-role="{{ role['id'] }}"]:checked'
+            ).length;
+            const badge = document.getElementById('count-{{ role['id'] }}');
+            if (badge) badge.textContent = checked;
+        }
+        {% endfor %}
+    }
+    updateCounts();
+
+    /* Toggle single permission */
+    function togglePermission(checkbox) {
+        if (requesting) requesting.style.display = 'block';
+        const formData = new FormData();
+        formData.append('role_id', checkbox.dataset.role);
+        formData.append('permission_id', checkbox.dataset.perm);
+        return csrfFetch(apiUrl, {
+            method: checkbox.checked ? 'POST' : 'DELETE',
+            body: formData
+        }).then(res => {
+            if (!res.headers.get('content-type')?.includes('application/json')) {
+                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+            }
+            return res.json();
+        }).then(response => {
+            Notify(
+                response.type ?? 'warning',
+                response.title ?? `{{ 'notice'|text|e('js') }}`,
+                response.message ?? 'Role permission set'
+            );
+        }).catch(error => {
+            checkbox.checked = !checkbox.checked;
+            Notify('danger', `{{ 'error'|text|e('js') }}`, error.message);
+        }).finally(() => {
+            updateCounts();
+            if (requesting) requesting.style.display = 'none';
+        });
+    }
+
+    /* Bind checkbox clicks */
+    document.querySelectorAll('input.perm-check').forEach(cb => {
+        cb.addEventListener('change', function () { togglePermission(this); });
+    });
+
+    /* Select all / Deselect all buttons */
+    document.querySelectorAll('.select-all-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const roleId = this.dataset.role;
+            const unchecked = document.querySelectorAll(
+                `input.perm-check[data-role="${roleId}"]:not(:checked)`
+            );
+            for (const cb of unchecked) {
+                cb.checked = true;
+                await togglePermission(cb);
+            }
+        });
+    });
+    document.querySelectorAll('.deselect-all-btn').forEach(btn => {
+        btn.addEventListener('click', async function () {
+            const roleId = this.dataset.role;
+            const checked = document.querySelectorAll(
+                `input.perm-check[data-role="${roleId}"]:checked`
+            );
+            for (const cb of checked) {
+                cb.checked = false;
+                await togglePermission(cb);
+            }
+        });
+    });
+});
+</script>

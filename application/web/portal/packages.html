@@ -1,0 +1,64 @@
+<!-- Variables: t, lang, packages, packagist_user, github_org -->
+
+<h1 class="tc-section-title mt-0">{{ t['packages_title'] }}</h1>
+<p class="tc-section-lead">{{ t['packages_lead'] }}</p>
+
+<!-- Project window: package table -->
+<div class="tc-window tc-window-scroll">
+    <span class="tc-window-close">[<span>&#9632;</span>]</span>
+    <span class="tc-window-title">CODESAUR.PRJ</span>
+    <span class="tc-window-num">1=[<span>&#8597;</span>]</span>
+    <div class="table-responsive">
+        <table class="tc-prj-table">
+            <thead>
+                <tr>
+                    <th>Package</th>
+                    <th>{{ t['package_installed'] }}</th>
+                    <th>Packagist</th>
+                    <th>PSR</th>
+                    <th>{{ t['package_docs'] }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key, pkg in packages %}
+                    <tr>
+                        <td><i class="bi {{ pkg['icon'] }} me-1 tc-green"></i><a href="{{ 'package'|link({'key': key}) }}">{{ pkg['name'] }}</a></td>
+                        <td>{{ pkg['version'] ?? '-' }}</td>
+                        <td><img src="https://img.shields.io/packagist/v/{{ pkg['name'] }}?style=flat-square&color=00A651&label=" alt="version" style="height:18px;vertical-align:middle"></td>
+                        <td>{{ pkg['psr'] is not empty ? pkg['psr']|join(', ') : '-' }}</td>
+                        <td>
+                            <a href="{{ 'docs-doc'|link({'key': key, 'doc': 'guide'}) }}">{{ t['doc_guide'] }}</a> &middot;
+                            <a href="{{ 'docs-doc'|link({'key': key, 'doc': 'api'}) }}">API</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <span class="tc-window-foot"><b>{{ packages|length }}</b> packages &#9552;&#9552; <a href="{{ packagist_user }}" target="_blank" rel="noopener">packagist.org/users/codesaur</a></span>
+</div>
+
+<!-- Tiled package windows -->
+<div class="row g-4 mt-1">
+    {% for key, pkg in packages %}
+        <div class="col-md-6 col-lg-4">
+            <div class="tc-dialog tc-window-card" style="height:calc(100% - 2.5rem)">
+                <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+                <span class="tc-dialog-title">{{ pkg['title'] }}</span>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="tc-feature-icon me-3"><i class="bi {{ pkg['icon'] }}"></i></span>
+                    <div>
+                        <div class="fw-bold">{{ pkg['name'] }}</div>
+                        {% if pkg['version'] is not empty %}<div class="small">{{ pkg['version'] }}</div>{% endif %}
+                    </div>
+                </div>
+                <p class="small flex-grow-1">{{ pkg['summary'][lang] }}</p>
+                <pre class="mb-3"><code class="language-bash">{{ pkg['install'] }}</code></pre>
+                <div class="tc-dialog-actions mt-0">
+                    <a class="tc-btn tc-btn-sm" href="{{ 'package'|link({'key': key}) }}">{{ t['package_view'] }}</a>
+                    <a class="tc-btn tc-btn-sm tc-btn-gray" href="{{ pkg['github'] }}" target="_blank" rel="noopener">GitHub</a>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>

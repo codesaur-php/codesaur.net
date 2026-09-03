@@ -1,0 +1,700 @@
+{% set user_can = user.can('system_content_settings') %}
+
+<!-- Settings хуудасны ерөнхий толгой бүтэц -->
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h5 class="text-primary text-uppercase"><i class="bi bi-gear-fill"></i> {{ 'settings'|text }}</h5>
+    <div>
+        <a class="btn btn-sm btn-primary text-uppercase" href="{{ 'home'|link }}">
+            <i class="bi bi-house-door-fill"></i> {{ 'home'|text }}
+        </a>
+        <a class="btn btn-sm btn-outline-secondary" href="{{ 'manual-view'|link({'file': 'settings-manual-' ~ localization.code ~ '.html'}) }}" title="{{ 'manual'|text }}" target="_blank">
+            <i class="bi bi-question-circle"></i>
+        </a>
+    </div>
+</div>
+
+<!-- Таб меню: Meta (гарчиг, тайлбар, холбоо барих), Logo (logo, favicon, apple-touch-icon), Config (JSON тохиргоо) -->
+<ul class="nav nav-tabs mt-1" role="tablist">    
+    <!-- Meta таб - анхдагч идэвхтэй -->
+    <li class="nav-item">
+        <a class="nav-link active show" data-bs-toggle="tab" href="#tab-meta">
+            {{ 'meta'|text }} <i class="bi bi-card-text"></i>
+        </a>
+    </li>
+
+    <!-- Logo таб -->
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab-logo">
+            {{ 'logo'|text }} <i class="bi bi-images"></i>
+        </a>
+    </li>
+
+    <!-- Config таб -->
+    <li class="nav-item">
+        <a class="nav-link" data-bs-toggle="tab" href="#tab-config">
+            {{ 'config'|text }} <i class="bi bi-gear"></i>
+        </a>
+    </li>
+</ul>
+
+<!-- Таб контент - tab-pane-үүдийг агуулсан үндсэн контейнер -->
+<div class="settings-tabs tab-content mt-2">
+    <!-- Meta таб: title, description, urgent, email, phone, contact, address, copyright (олон хэл дээр) -->
+    <div class="tab-pane active show" id="tab-meta" role="tabpanel">
+        <!-- Meta мэдээлэл оруулах форм - post settings route, multipart/form-data, needs-validation -->
+        <form class="needs-validation pt-1" novalidate action="{{ 'settings'|link }}" method="POST" enctype="multipart/form-data">
+            <!-- Title (олон хэл дээр) - хэл бүрийн утгыг тусдаа form-control-оор авна, label дээр далбаа харагдана -->
+            {% for code,language in localization.language %}
+                <div class="form-floating mt-2">
+                    <input class="form-control"
+                           name="title[{{ code }}]"
+                           value="{{ record['localized'][code]['title']|e }}"
+                           maxlength="70"
+                           id="title_{{ code }}"
+                           autocomplete="off">
+                    <!-- Хэл тус бүрийн title label + flag -->
+                    <label for="title_{{ code }}">
+                        {{ 'title'|text }}
+                        {% set flag = code == 'en' ? 'us' : code %}
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png"
+                             srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                             width="16" height="12"
+                             alt="{{ language['title']|e }}">
+                    </label>
+                </div>
+            {% endfor %}
+            <hr>
+
+            <!-- Description (олон хэл дээр) - товч тайлбар, SEO description хэл тус бүрээр -->
+            {% for code,language in localization.language %}
+                <div class="form-floating mt-2">
+                    <input class="form-control"
+                           name="description[{{ code }}]"
+                           value="{{ record['localized'][code]['description']|e }}"
+                           maxlength="255"
+                           id="description_{{ code }}"
+                           autocomplete="off">
+                    <label for="description_{{ code }}">
+                        {{ 'description'|text }}
+                        {% set flag = code == 'en' ? 'us' : code %}
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png"
+                             srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                             width="16" height="12"
+                             alt="{{ language['title']|e }}">
+                    </label>
+                </div>
+            {% endfor %}
+            <hr>
+
+            <!-- Urgent (олон хэл дээр) - хуудасны дээд хэсэгт харагдах анхааруулга, HTML бичиж болно -->
+            {% for code,language in localization.language %}
+                <div class="form-floating mt-2">                    
+                    <textarea class="form-control"
+                              name="urgent[{{ code }}]"
+                              id="urgent_{{ code }}"
+                              style="height:200px">{{ record['localized'][code]['urgent']|e }}</textarea>
+                    <label for="urgent_{{ code }}">
+                        {{ 'urgent'|text }}
+                        {% set flag = code == 'en' ? 'us' : code %}
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png"
+                             srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                             width="16" height="12"
+                             alt="{{ language['title']|e }}">
+                    </label>
+                </div>
+            {% endfor %}
+            <hr>
+
+            <!-- Email, phone - глобал холбоо барих мэдээлэл (олон хэлнээс хамаарахгүй) -->
+
+            <!-- Email -->
+            <div class="form-floating mt-2">
+                <input class="form-control"
+                       name="email"
+                       type="email"
+                       value="{{ record['email']|e }}"
+                       maxlength="70"
+                       id="email"
+                       autocomplete="off">
+                <label for="email">{{ 'email'|text }}</label>
+            </div>
+
+            <!-- Phone -->
+            <div class="form-floating mt-2">
+                <input class="form-control"
+                       name="phone"
+                       value="{{ record['phone']|e }}"
+                       maxlength="70"
+                       id="phone"
+                       autocomplete="off">
+                <label for="phone">{{ 'phone'|text }}</label>
+            </div>
+            <hr>
+            
+            <!-- Contact (олон хэл дээр) - "Холбоо барих" хэсгийн контент, хэл бүрээр тусдаа, HTML бичиж болно -->
+            {% for code,language in localization.language %}
+                <div class="form-floating mt-2">
+                    <textarea class="form-control"
+                              name="contact[{{ code }}]"
+                              id="contact_{{ code }}"
+                              style="height:200px">{{ record['localized'][code]['contact']|e }}</textarea>
+
+                    <!-- Хэл тус бүрийн гарчиг + далбаа -->
+                    <label for="contact_{{ code }}">
+                        {{ 'contact'|text }}
+                        {% set flag = code == 'en' ? 'us' : code %}
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png"
+                             srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                             width="16" height="12"
+                             alt="{{ language['title']|e }}">
+                    </label>
+                </div>
+            {% endfor %}            
+            <hr>
+
+            <!-- Address (олон хэл дээр) - байршлын хаяг, localization-д хадгалагдана, HTML бичиж болно -->
+            {% for code,language in localization.language %}
+                <div class="form-floating mt-2">
+                    <textarea class="form-control"
+                              name="address[{{ code }}]"
+                              id="address_{{ code }}"
+                              style="height:120px">{{ record['localized'][code]['address']|e }}</textarea>
+
+                    <!-- Хаягийн label + хэлний далбаа -->
+                    <label for="address_{{ code }}">
+                        {{ 'address'|text }}
+                        {% set flag = code == 'en' ? 'us' : code %}
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png"
+                             srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                             width="16" height="12"
+                             alt="{{ language['title']|e }}">
+                    </label>
+                </div>
+            {% endfor %}
+            <hr>
+
+            <!-- Copyright (олон хэл дээр) - footer-т харагдах зохиогчийн эрхийн текст, HTML бичиж болно -->
+            {% for code,language in localization.language %}
+                <div class="form-floating mt-2">
+                    <input class="form-control"
+                           name="copyright[{{ code }}]"
+                           value="{{ record['localized'][code]['copyright']|e }}"
+                           maxlength="255"
+                           id="copyright_{{ code }}"
+                           autocomplete="off">
+
+                    <!-- Label + хэлний далбаа -->
+                    <label for="copyright_{{ code }}">
+                        Copyright
+                        {% set flag = code == 'en' ? 'us' : code %}
+                        <img src="https://flagcdn.com/20x15/{{ flag }}.png"
+                             srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                             width="16" height="12"
+                             alt="{{ language['title']|e }}">
+                    </label>
+                </div>
+            {% endfor %}
+
+            <!-- Settings хадгалах товч - зөвхөн system_content_settings эрхтэй үед харагдана -->
+            {% if user_can %}
+                <button class="submit-settings btn btn-primary text-uppercase mt-3 shadow-sm">
+                    <i class="bi bi-save pe-1"></i> {{ 'save'|text }}
+                </button>
+            {% endif %}
+        </form>
+    </div> <!-- End of meta tab -->
+    
+    <!-- Logo таб: Logo (олон хэл дээр), Favicon (.ico), Apple touch icon upload -->
+    <div class="tab-pane" id="tab-logo" role="tabpanel">
+        <!-- File upload form - method="POST", enctype="multipart/form-data" заавал -->
+        <form class="needs-validation"
+              novalidate
+              action="{{ 'settings-files'|link }}"
+              method="POST"
+              enctype="multipart/form-data">
+            <div class="row mb-3 mt-2">
+                <!-- Зүүн талын багана - Logo (олон хэлээр), хэл бүрийн logo upload -->
+                <div class="col">
+                    {% for code,language in localization.language %}
+                        {% if not loop.first %}<hr>{% endif %}
+                        
+                        <!-- Logo-н гарчиг + хэлний далбаа -->
+                        <label class="form-label">
+                            {{ 'logo'|text }}
+                            {% set flag = code == 'en' ? 'us' : code %}
+                            <img src="https://flagcdn.com/20x15/{{ flag }}.png"
+                                srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                                width="20" height="15"
+                                alt="{{ language['title']|e }}">
+                        </label>
+
+                        <!-- Logo file input групп - choose (browse), remove (цэвэрлэх), preview -->
+                        <div class="input-group">
+                            <!-- Зураг нэрийг харуулах текст input -->
+                            <input class="form-control"
+                                   type="text"
+                                   id="logo_{{ code }}_name"
+                                   disabled
+                                   value="{{ record['localized'][code]['logo']|e }}"
+                                   placeholder="{{ 'select-an-image'|text|e }}">
+                            <div class="input-group-append">
+                                <div class="btn-group">
+                                    <!-- Жинхэнэ file input (нуусан) -->
+                                    <input type="file"
+                                           name="logo[{{ code }}]"
+                                           id="logo_{{ code }}"
+                                           accept="image/*"
+                                           maxlength="256"
+                                           style="display:none;"
+                                           onchange="onFileInput(this);">
+                                    
+                                    <!-- Файл сонгох товч -->
+                                    <button class="btn btn-info" type="button"
+                                            onclick="this.previousElementSibling.click();">
+                                        {{ 'choose'|text }}
+                                    </button>
+
+                                    <!-- Файлыг устгах / цэвэрлэх товч -->
+                                    <button class="btn btn-danger" type="button"
+                                            onclick="onFileClear(this);"
+                                            style="{% if record['localized'][code]['logo'] is empty %}display:none;{% endif %}">
+                                        {{ 'remove'|text }}
+                                    </button>
+
+                                    <!-- Remove болсон эсэхийг backend-д мэдээлэх -->
+                                    <input type="hidden"
+                                           name="logo_{{ code }}_removed"
+                                           value="0"
+                                           type="number">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Logo file size харуулах талбар -->
+                        <input class="form-control-plaintext small text-muted mt-1"
+                               id="logo_{{ code }}_size"
+                               value="{{ record['localized'][code]['logo_size'] ?? '' }}"
+                               disabled>
+                        <!-- Logo preview зураг - record дээр зураг байвал харагдана, хоосон бол display:none -->
+                        <img class="img-thumbnail img-fluid"
+                             id="logo_{{ code }}_preview"
+                             src="{{ record['localized'][code]['logo']|e }}"
+                             style="max-height:480px;{% if record['localized'][code]['logo'] is empty %}display:none;{% endif %}">
+                    {% endfor %}
+                </div> <!-- End col-left -->                
+
+                <!-- Баруун талын багана - Favicon, Apple touch icon upload -->
+                <div class="col">
+                    <!-- Favicon -->
+                    <label class="form-label">Favicon</label>
+
+                    <div class="input-group">
+                        <!-- Файлын нэр үзүүлэх input -->
+                        <input class="form-control"
+                               type="text"
+                               id="favicon_name"
+                               disabled
+                               value="{{ record['favicon']|e }}"
+                               placeholder="Select icon file">
+                        
+                        <div class="input-group-append">
+                            <div class="btn-group">
+                                <!-- Жинхэнэ file input -->
+                                <input type="file"
+                                       name="favicon"
+                                       id="favicon"
+                                       accept=".ico"
+                                       maxlength="256"
+                                       style="display:none;"
+                                       onchange="onFileInput(this);">
+
+                                <!-- Choose -->
+                                <button class="btn btn-info" type="button"
+                                        onclick="this.previousElementSibling.click();">
+                                    {{ 'choose'|text }}
+                                </button>
+
+                                <!-- Remove -->
+                                <button class="btn btn-danger" type="button"
+                                        onclick="onFileClear(this);"
+                                        style="{% if record['favicon'] is empty %}display:none;{% endif %}">
+                                    {{ 'remove'|text }}
+                                </button>
+
+                                <!-- Remove flag -->
+                                <input type="hidden"
+                                       name="favicon_removed"
+                                       value="0"
+                                       type="number">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Favicon файлын хэмжээ -->
+                    <input class="form-control-plaintext small text-muted mt-1"
+                           id="favicon_size"
+                           value="{{ record['favicon_size'] ?? '' }}"
+                           disabled>
+                    <!-- Favicon preview -->
+                    <img class="img-thumbnail img-fluid"
+                         id="favicon_preview"
+                         src="{{ record['favicon']|e }}"
+                         style="max-height:256px;{% if record['favicon'] is empty %}display:none;{% endif %}">
+                    <hr>
+
+                    <!-- Apple touch icon -->
+                    <label class="form-label">
+                        Apple touch image icon (min 180x180 pixels recommended)
+                    </label>
+                    <div class="input-group">
+                        <!-- Файлын нэр -->
+                        <input class="form-control"
+                               type="text"
+                               id="apple_touch_icon_name"
+                               disabled
+                               value="{{ record['apple_touch_icon']|e }}"
+                               placeholder="{{ 'select-an-image'|text|e }}">
+                        
+                        <div class="input-group-append">
+                            <div class="btn-group">
+                                <!-- File input -->
+                                <input type="file"
+                                       name="apple_touch_icon"
+                                       id="apple_touch_icon"
+                                       accept="image/*"
+                                       maxlength="256"
+                                       style="display:none;"
+                                       onchange="onFileInput(this);">
+
+                                <!-- Choose -->
+                                <button class="btn btn-info" type="button"
+                                        onclick="this.previousElementSibling.click();">
+                                    {{ 'choose'|text }}
+                                </button>
+
+                                <!-- Remove -->
+                                <button class="btn btn-danger" type="button"
+                                        onclick="onFileClear(this);"
+                                        style="{% if record['apple_touch_icon'] is empty %}display:none;{% endif %}">
+                                    {{ 'remove'|text }}
+                                </button>
+
+                                <!-- Remove flag -->
+                                <input type="hidden"
+                                       name="apple_touch_icon_removed"
+                                       value="0"
+                                       type="number">
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Apple touch icon файлын хэмжээ -->
+                    <input class="form-control-plaintext small text-muted mt-1"
+                           id="apple_touch_icon_size"
+                           value="{{ record['apple_touch_icon_size'] ?? '' }}"
+                           disabled>
+                    
+                    <!-- Preview -->
+                    <img class="img-thumbnail img-fluid"
+                         id="apple_touch_icon_preview"
+                         src="{{ record['apple_touch_icon']|e }}"
+                         style="max-height:480px;{% if record['apple_touch_icon'] is empty %}display:none;{% endif %}">
+                </div> <!-- End col-right -->
+            </div> <!-- End row -->
+
+            <!-- Save button (эрх шаардлагатай) -->
+            {% if user_can %}
+                <button class="submit-settings btn btn-primary text-uppercase mt-3 shadow-sm">
+                    <i class="bi bi-save pe-1"></i> {{ 'save'|text }}
+                </button>
+            {% endif %}
+        </form>
+    </div> <!-- End logo tab -->
+    
+    <!-- Config таб - JSON хэлбэрийн сайтын нэмэлт тохиргоо (structure алдаагүй байх ёстой) -->
+    <div class="tab-pane" id="tab-config" role="tabpanel">
+        <!-- Config form - settings endpoint рүү хадгална, бусад таб-тай unified enctype -->
+        <form class="needs-validation"
+              novalidate
+              action="{{ 'settings'|link }}"
+              method="POST"
+              enctype="multipart/form-data">
+            <!-- JSON valid байх ёстойг сануулах тайлбар -->
+            <label class="form-label text-muted small">
+                <i>must be valid JSON</i>
+            </label>
+
+            <!-- Pretty print товч - JSON текстийг форматлана (prettyPrint() доорх JS-д) -->
+            <a class="badge bg-info mb-2"
+               href="javascript:;"
+               onclick="prettyPrint();">
+                pretty print
+            </a>
+
+            <!-- JSON editor textarea - config талбарын утгыг харуулна -->
+            <textarea class="form-control"
+                      name="config"
+                      id="config_editor"
+                      rows="25"
+                      style="height:450px">{{ record['config']|e }}</textarea>
+
+            <!-- Хадгалах товч (зөвхөн эрхтэй хэрэглэгчид) -->
+            {% if user_can %}
+                <button class="submit-settings btn btn-primary text-uppercase mt-3 shadow-sm">
+                    <i class="bi bi-save pe-1"></i> {{ 'save'|text }}
+                </button>
+            {% endif %}
+        </form>
+    </div> <!-- End config tab -->
+</div> <!-- End settings-tabs -->
+
+<!-- Logger section - Settings-тэй холбоотой системийн log (зөвхөн system_logger эрхтэй үед) -->
+{% if user.can('system_logger') %}
+<div class="mt-5">
+    <hr>
+
+    <!-- Logger title -->
+    <label class="form-label fw-bolder">
+        {{ 'log'|text }} <i class="bi bi-clock-history"></i>
+    </label>
+
+    <!-- Ачаалж байх үед харагдах loader (spinner) -->
+    <div class="spinner-grow mt-3" role="status" style="display:none">
+        <span class="visually-hidden">Loading logs...</span>
+    </div>
+
+    <!-- Log list container - settings-* холбоотой лог мэдээлэл append хийгдэнэ -->
+    <ul class="list-group logger-protocol"
+        id="logger-content"
+        data-retrieve="{{ 'logs-retrieve'|link }}"
+        data-view="{{ 'logs-view'|link }}"
+        data-context='{"action":"settings-*"}'
+        style="max-height:240px; overflow-y:auto">
+    </ul>
+</div>
+{% endif %}
+
+<script type="text/javascript">
+    /* 
+        JSON Pretty Print 
+        -------------------------
+        - config textarea-г олно
+        - JSON parse -> stringify(4 space indent)
+        - Алдааны үед Notify хэрэглэнэ
+    */
+    const prettyPrint = function () {
+        try {
+            const configEditor = document.querySelector('textarea#config_editor');
+            if (!configEditor) {
+                throw new Error('JSON editor not selected!');
+            }
+
+            const val = configEditor.value;
+            if (val) {
+                const obj = JSON.parse(val);
+                const pretty = JSON.stringify(obj, null, 4);
+                configEditor.value = pretty;
+            }
+        } catch (e) {
+            Notify('danger', `{{ 'error'|text|e }}`, e.message);
+        }
+    };
+
+    /* 
+        Файл upload хийх үед ажилладаг функц
+        ------------------------------------------------------
+        - Файлын нэрийг input-д харуулна
+        - "Choose" -> "Change"
+        - Remove товчийг харуулна
+        - Preview зураг update хийнэ
+        - File size талбар шинэчилнэ
+    */
+    const onFileInput = function (fileInput) {
+        /* ID шалгах */
+        const id = fileInput.id;
+        if (!id) {
+            return Notify('warning', `{{ 'error'|text|e }}`, 'Please set file input id!');
+        }
+
+        /* Файлын нэрийг текст input-д харуулах */
+        const nameInput = document.getElementById(`${id}_name`);
+        if (nameInput && fileInput.files.length > 0) {
+            nameInput.value = fileInput.files[0].name;
+        }
+
+        /* Файлын хэмжээ харуулах */
+        const sizeInput = document.getElementById(`${id}_size`);
+        if (sizeInput && fileInput.files.length > 0) {
+            const kb = Math.round(fileInput.files[0].size / 1024);
+            sizeInput.value = `${kb} KB`;
+        }
+
+        /* "Choose" -> "Change" */
+        const browseBtn = fileInput.nextElementSibling;
+        if (browseBtn) {
+            browseBtn.textContent = `{{ 'change'|text|e }}`;
+        }
+
+        /* Remove товчийг харуулах */
+        const removeBtn = browseBtn?.nextElementSibling;
+        if (removeBtn && removeBtn.style.display === 'none') {
+            removeBtn.style.display = 'block';
+        }
+
+        /* removed=0 болгох */
+        const fileDeletedInput = removeBtn?.nextElementSibling;
+        if (fileDeletedInput) {
+            fileDeletedInput.value = 0;
+        }
+
+        /* Preview update */
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const previewImg = document.getElementById(`${id}_preview`);
+            if (previewImg) {
+                previewImg.src = e.target.result;
+                if (previewImg.style.display === 'none') {
+                    previewImg.style.display = 'block';
+                }
+            }
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    };
+
+    /* 
+        Файл Remove хийх үед
+        ------------------------------------------------------
+        - File input = '' болгоно
+        - Preview арилгана
+        - Name талбар хоосолно
+        - Size талбар хоосолно
+        - removed hidden input = 1
+    */
+    const onFileClear = function (removeBtn) {
+        const fileInput = removeBtn?.previousElementSibling?.previousElementSibling;
+        if (fileInput?.tagName === 'INPUT' && fileInput.type === 'file') {
+            /* Preview хоослох */
+            const previewImg = document.getElementById(`${fileInput.id}_preview`);
+            if (previewImg) {
+                previewImg.removeAttribute('src');
+                previewImg.style.display = 'none';
+            }
+
+            /* Файлын нэр хоослох */
+            const nameInput = document.getElementById(`${fileInput.id}_name`);
+            if (nameInput) {
+                nameInput.value = '';
+            }
+
+            /* File size хоослох */
+            const sizeInput = document.getElementById(`${fileInput.id}_size`);
+            if (sizeInput) {
+                sizeInput.value = '';
+            }
+
+            /* "Choose" текст рүү буцаах */
+            const browseBtn = fileInput.nextElementSibling;
+            if (browseBtn) {
+                browseBtn.textContent = `{{ 'choose'|text|e }}`;
+            }
+
+            /* Remove товчийг нуух */
+            removeBtn.style.display = 'none';
+
+            /* File input цэвэрлэх */
+            fileInput.value = '';
+
+            /* removed flag = 1 болгох */
+            const fileDeletedInput = removeBtn.nextElementSibling;
+            if (fileDeletedInput) {
+                fileDeletedInput.value = 1;
+            }
+        }
+    };
+
+    /* 
+        SAVE BUTTON -> requestSubmit()
+        ------------------------------------------------------
+        - HTML form submit-ийг зөв trigger хийх
+    */
+    const submitters = document.querySelectorAll('button.submit-settings');
+    submitters.forEach(function (button) {
+        button.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            const form = this.closest('form');
+            if (!form) {
+                return Notify('danger', `{{ 'error'|text|e }}`, 'Form not found!');
+            }
+            
+            form.requestSubmit();
+        });
+    });
+
+    /* 
+        FORM SUBMIT (AJAX FETCH)
+        ------------------------------------------------------
+        - Form validation
+        - FormData -> fetch
+        - JSON response шалгах
+        - Амжилттай бол reload()
+    */
+    document.querySelectorAll('.settings-tabs form').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            event.preventDefault();
+
+            const valid = this.checkValidity();
+            this.classList.add('was-validated');
+
+            if (!valid) {
+                event.stopPropagation();
+
+                /* Эхний invalid input-ыг олж, хамаарах таб руу шилжээд focus хийнэ */
+                const firstInvalid = this.querySelector(':invalid');
+                if (firstInvalid) {
+                    const tabPane = firstInvalid.closest('.tab-pane');
+                    if (tabPane) {
+                        const tabBtn = document.querySelector(`a.nav-link[href="#${tabPane.id}"], button.nav-link[data-bs-target="#${tabPane.id}"]`);
+                        if (tabBtn) {
+                            bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+                        }
+                    }
+                    setTimeout(() => firstInvalid.focus(), 200);
+                }
+
+                return Notify('danger', `{{ 'error'|text|e }}`, `{{ 'u-have-some-form-errors'|text|e }}`);
+            }
+
+            submitters.forEach(function (btn) { btn.spinNstop(); });
+
+            const data = new FormData(this);
+            csrfFetch(
+                this.action,
+                {
+                    body: data,
+                    method: this.getAttribute('method') ?? 'POST'
+                }
+            ).then(res => {
+                const contentType = res.headers.get('content-type') || '';
+                if (contentType.includes('application/json')) return res.json();
+
+                throw new Error(`HTTP [${res.status}]: ${res.statusText}`);
+            }).then(response => {
+                if (response.status !== 'success') {
+                    throw new Error(response.message ? response.message : 'Invalid response!');
+                }
+
+                Notify(
+                    response.type ?? 'success',
+                    response.title ?? `{{ 'success'|text|e }}`,
+                    response.message ?? 'Settings updated'
+                );
+
+                window.location.reload();
+            }).catch(error => {
+                Notify('danger', `{{ 'error'|text|e }}`, error.message);
+            }).finally(() => {
+                submitters.forEach(function (btn) { btn.spinNstop(); });
+            });
+        });
+    });
+</script>

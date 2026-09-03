@@ -1,0 +1,282 @@
+<!-- Variables: t, lang, raptor, modules, packages, github_org, index -->
+
+<div class="tc-window tc-window-scroll">
+    <span class="tc-window-close">[<span>&#9632;</span>]</span>
+    <span class="tc-window-title">RAPTOR</span>
+    <span class="tc-window-num">1=[<span>&#8597;</span>]</span>
+    <div class="row align-items-center g-4">
+        <div class="col-md-8">
+            <div class="tc-cyan small text-uppercase">{{ raptor['name'] }}</div>
+            <h1 class="h2 mb-2">Raptor Framework<span class="tc-cursor"></span></h1>
+            <p class="tc-lead">{{ raptor['summary'][lang] }}</p>
+            <p class="mb-3">{{ raptor['description'][lang] }}</p>
+            <div class="tc-badges mb-3">
+                <img src="https://img.shields.io/packagist/v/{{ raptor['name'] }}?style=flat-square&color=00A651&label=packagist" alt="Packagist version">
+                <img src="https://img.shields.io/packagist/dt/{{ raptor['name'] }}?style=flat-square&color=39B54A" alt="Downloads">
+                <img src="https://img.shields.io/badge/php-%5E8.2.1-0000AA?style=flat-square&logo=php" alt="PHP version">
+                <img src="https://img.shields.io/badge/license-MIT-8DC63F?style=flat-square" alt="License">
+            </div>
+            <div class="tc-dialog-actions">
+                <a class="tc-btn" href="{{ 'docs-doc'|link({'key': 'raptor', 'doc': 'guide'}) }}">{{ t['doc_guide'] }}</a>
+                <a class="tc-btn tc-btn-alt" href="{{ 'docs-doc'|link({'key': 'raptor', 'doc': 'api'}) }}">{{ t['doc_api'] }}</a>
+                <a class="tc-btn tc-btn-gray" href="{{ raptor['github'] }}" target="_blank" rel="noopener">GitHub</a>
+                <a class="tc-btn tc-btn-gray" href="{{ raptor['packagist'] }}" target="_blank" rel="noopener">Packagist</a>
+            </div>
+        </div>
+        <div class="col-md-4 text-center">
+            <img src="{{ index }}/assets/portal/logo.png" alt="codesaur" style="max-height:220px">
+        </div>
+    </div>
+    <span class="tc-window-foot"><b>1:1</b> &#9552;&#9552; {{ raptor['install'] }}</span>
+</div>
+
+<!-- Features -->
+<div class="tc-dialog">
+    <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+    <span class="tc-dialog-title">{{ t['package_features'] }}</span>
+    <div class="row">
+        {% for feature in raptor['features'][lang] %}
+            <div class="col-md-6">
+                <ul class="tc-checklist"><li>{{ feature }}</li></ul>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="tc-group">
+        <span class="tc-group-label">PSR</span>
+        {% for psr in raptor['psr'] %}<span class="tc-btn tc-btn-sm tc-btn-alt me-2 mb-2">{{ psr }}</span>{% endfor %}
+    </div>
+</div>
+
+<!-- Architecture + middleware -->
+<div class="row g-4">
+    <div class="col-lg-7">
+        <h2 class="tc-section-title">{{ t['arch_title'] }}</h2>
+        <p class="tc-section-lead">{{ t['arch_lead'] }}</p>
+        <div class="tc-window">
+            <span class="tc-window-close">[<span>&#9632;</span>]</span>
+            <span class="tc-window-title">RAPTOR.PRJ</span>
+            <span class="tc-window-num">2=[<span>&#8597;</span>]</span>
+<pre class="tc-tree"><span class="k">public_html/index.php</span> <span class="c">(Entry point)</span>
+ |
+ |-- <span class="g">/dashboard/*</span> -> <span class="i">Dashboard\Application</span> <span class="c">(Admin Panel)</span>
+ |    |-- Middleware: ErrorHandler -> MethodOverride -> BodyEncoding
+ |    |               -> Session -> JWT -> Container -> Localization -> Settings
+ |    |-- Routers: Login, Users, Organization, RBAC, Localization, Contents,
+ |    |            Messages, Comments, Logs, Template, Shop, Development, Migration
+ |    \-- Controllers -> Templates -> HTML Response
+ |
+ \-- <span class="g">/*</span> -> <span class="i">Web\Application</span> <span class="c">(Public Website)</span>
+      |-- Middleware: ExceptionHandler -> MethodOverride -> BodyEncoding
+      |               -> Container -> Session -> Localization -> Settings
+      |-- Routers: WebRouter, PortalRouter
+      \-- Controllers -> Templates -> HTML Response
+
+<span class="k">{{ t['arch_flow'] }}:</span>
+  Browser -> index.php -> .env -> ServerRequest
+    -> Application selection <span class="c">(by URL path)</span>
+      -> Middleware chain <span class="c">(in order)</span>
+        -> Router match
+          -> Controller::action()
+            -> Model (DB)
+            -> FileTemplate (codesaur/template) -> render()
+              -> HTML Response -> Browser</pre>
+            <span class="tc-window-foot"><b>1:1</b></span>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <h2 class="tc-section-title">{{ t['raptor_middleware'] }}</h2>
+        <p class="tc-section-lead">PSR-15</p>
+        <div class="tc-dialog">
+            <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+            <span class="tc-dialog-title">Middleware</span>
+            <div class="tc-group">
+                <span class="tc-group-label">{{ t['raptor_middleware_dashboard'] }}</span>
+                <ol class="mb-0 ps-3 small">
+                    <li>ErrorHandler</li>
+                    <li>MethodOverrideMiddleware</li>
+                    <li>BodyEncodingMiddleware</li>
+                    <li>SessionMiddleware</li>
+                    <li>JWTAuthMiddleware</li>
+                    <li>ContainerMiddleware</li>
+                    <li>LocalizationMiddleware</li>
+                    <li>SettingsMiddleware</li>
+                    <li><em>CsrfMiddleware</em> (per-route)</li>
+                </ol>
+            </div>
+            <div class="tc-group">
+                <span class="tc-group-label">{{ t['raptor_middleware_web'] }}</span>
+                <ol class="mb-0 ps-3 small">
+                    <li>ExceptionHandler</li>
+                    <li>MethodOverrideMiddleware</li>
+                    <li>BodyEncodingMiddleware</li>
+                    <li>ContainerMiddleware</li>
+                    <li>SessionMiddleware</li>
+                    <li>LocalizationMiddleware</li>
+                    <li>SettingsMiddleware</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modules -->
+<h2 class="tc-section-title">{{ t['raptor_modules'] }}</h2>
+<p class="tc-section-lead">{{ t['raptor_modules_lead'] }}</p>
+<div class="tc-dialog">
+    <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+    <span class="tc-dialog-title">Dashboard</span>
+    <div class="row g-3">
+        {% for module in modules %}
+            <div class="col-md-6 col-lg-4">
+                <div class="tc-feature">
+                    <div class="tc-feature-icon"><i class="bi {{ module['icon'] }}"></i></div>
+                    <div>
+                        <h3>{{ module['title'] }}</h3>
+                        <p>{{ module['text'] }}</p>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Getting started + directory -->
+<div class="row g-4">
+    <div class="col-lg-6">
+        <h2 class="tc-section-title">{{ t['quick_title'] }}</h2>
+        <p class="tc-section-lead">{{ t['quick_lead'] }}</p>
+        <div class="tc-dialog">
+            <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+            <span class="tc-dialog-title">New Project</span>
+            <div class="tc-group">
+                <span class="tc-group-label">{{ t['quick_req'] }}</span>
+                <ul class="tc-checklist mb-0">
+                    {% for req in raptor['requires'] %}<li>{{ req }}</li>{% endfor %}
+                </ul>
+            </div>
+            <pre><code class="language-bash">{{ raptor['install'] }}</code></pre>
+            <div class="tc-group">
+                <span class="tc-group-label">{{ t['raptor_config'] }}</span>
+<pre class="mb-0"><code class="language-ini"># Environment (development / production)
+CODESAUR_APP_ENV=development
+
+# Database (mysql | pgsql)
+RAPTOR_DB_DRIVER=mysql
+RAPTOR_DB_HOST=localhost
+RAPTOR_DB_NAME=raptor
+RAPTOR_DB_USERNAME=root
+RAPTOR_DB_PASSWORD=
+
+# JWT (secret is auto-generated)
+RAPTOR_JWT_ALGORITHM=HS256
+RAPTOR_JWT_LIFETIME=2592000
+
+# WAF compatibility (mod_security)
+RAPTOR_WAF_BODY_ENCODING=true</code></pre>
+            </div>
+            <blockquote>{{ t['quick_docroot'] }}</blockquote>
+            <div class="tc-group">
+                <span class="tc-group-label">{{ t['raptor_testing'] }}</span>
+                <p class="small">{{ t['raptor_testing_text'] }}</p>
+<pre class="mb-0"><code class="language-bash">composer test              # All tests
+composer test:unit         # Unit tests only
+composer test:integration  # Integration tests only</code></pre>
+            </div>
+            <div class="tc-dialog-actions">
+                <a class="tc-btn" href="{{ 'docs-doc'|link({'key': 'raptor', 'doc': 'guide'}) }}">{{ t['quick_more'] }}</a>
+                <a class="tc-btn tc-btn-alt" href="{{ 'docs-doc'|link({'key': 'raptor', 'doc': 'changelog'}) }}">{{ t['doc_changelog'] }}</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <h2 class="tc-section-title">{{ t['raptor_dir'] }}</h2>
+        <p class="tc-section-lead">package-by-feature</p>
+        <div class="tc-window">
+            <span class="tc-window-close">[<span>&#9632;</span>]</span>
+            <span class="tc-window-title">TREE</span>
+            <span class="tc-window-num">3=[<span>&#8597;</span>]</span>
+<pre class="tc-tree"><span class="k">raptor/</span>
+|-- <span class="g">application/</span>       <span class="c"># PHP application code (package-by-feature)</span>
+|   |-- dashboard/       <span class="c"># Admin panel + shared platform modules</span>
+|   \-- web/             <span class="c"># Public website application</span>
+|-- <span class="g">public_html/</span>       <span class="c"># Document root (index.php, assets/)</span>
+|-- <span class="g">database/</span>
+|   \-- migrations/      <span class="c"># SQL migration files</span>
+|-- <span class="g">tests/</span>             <span class="c"># PHPUnit tests (unit, integration)</span>
+|-- <span class="g">docs/</span>              <span class="c"># Documentation (en/, mn/, conf.example/)</span>
+|-- <span class="g">.github/</span>
+|   \-- workflows/       <span class="c"># CI + auto deploy</span>
+|-- <span class="g">logs/</span>              <span class="c"># Error logs</span>
+|-- <span class="g">cache/</span>             <span class="c"># Framework file cache (PSR-16)</span>
+|-- <span class="g">protected/</span>         <span class="c"># Protected files (outside docroot)</span>
+|-- composer.json
+|-- phpunit.xml
+\-- LICENSE              <span class="c"># MIT</span></pre>
+            <span class="tc-window-foot"><b>1:1</b></span>
+        </div>
+
+        <div class="tc-dialog">
+            <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+            <span class="tc-dialog-title">{{ t['package_classes'] }}</span>
+            <div class="table-responsive">
+                <table>
+                    <thead><tr><th>{{ t['package_class'] }}</th><th>{{ t['package_purpose'] }}</th></tr></thead>
+                    <tbody>
+                        {% for cls in raptor['classes'] %}
+                            <tr><td><code>{{ cls[0] }}</code></td><td>{{ cls[1][lang] }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ecosystem table -->
+<h2 class="tc-section-title">{{ t['eco_title'] }}</h2>
+<p class="tc-section-lead">{{ t['eco_lead'] }}</p>
+<div class="tc-window">
+    <span class="tc-window-close">[<span>&#9632;</span>]</span>
+    <span class="tc-window-title">CODESAUR.PRJ</span>
+    <span class="tc-window-num">4=[<span>&#8597;</span>]</span>
+    <div class="table-responsive">
+        <table class="tc-prj-table">
+            <thead><tr><th>Package</th><th>{{ t['package_installed'] }}</th><th>PSR</th><th>{{ t['package_purpose'] }}</th></tr></thead>
+            <tbody>
+                {% for key, pkg in packages %}
+                    {% if key != 'raptor' %}
+                        <tr>
+                            <td><a href="{{ 'package'|link({'key': key}) }}">{{ pkg['name'] }}</a></td>
+                            <td>{{ pkg['version'] ?? '-' }}</td>
+                            <td>{{ pkg['psr'] is not empty ? pkg['psr']|join(', ') : '-' }}</td>
+                            <td>{{ pkg['summary'][lang] }}</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <span class="tc-window-foot"><b>{{ packages|length - 1 }}</b> packages</span>
+</div>
+
+<!-- Story -->
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="tc-window">
+            <span class="tc-window-close">[<span>&#9632;</span>]</span>
+            <span class="tc-window-title">README.TXT</span>
+            <span class="tc-window-num">5=[<span>&#8597;</span>]</span>
+            <h2 class="h5">{{ t['story_title'] }}</h2>
+            <p class="mb-0">{{ t['story_text'] }}<span class="tc-cursor"></span></p>
+            <span class="tc-window-foot"><b>{{ t['author'] }}:</b> Narankhuu (codesaur)</span>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="tc-dialog">
+            <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+            <span class="tc-dialog-title">{{ t['raptor_acknowledge'] }}</span>
+            <p class="mb-2">{{ t['raptor_acknowledge_text'] }}</p>
+            <a href="https://gerege.com/" target="_blank" rel="noopener">gerege.com</a>
+        </div>
+    </div>
+</div>

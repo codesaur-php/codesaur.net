@@ -1,0 +1,227 @@
+<!-- Variables: t, lang, packages, recent, github_org, packagist_user, discussions, index -->
+
+<!-- Hero: editor window with an "About" dialog on top (Turbo C++ About box) -->
+<div class="tc-hero">
+    <div class="tc-window tc-hero-window tc-window-scroll">
+        <span class="tc-window-close">[<span>&#9632;</span>]</span>
+        <span class="tc-window-title">codesaur.net</span>
+        <span class="tc-window-num">1=[<span>&#8597;</span>]</span>
+<pre class="tc-listing"><span class="p">#include &lt;stdio.h&gt;</span>
+<span class="p">#include &lt;conio.h&gt;</span>
+<span class="p">#include "codesaur.h"</span>            <span class="c">/* Raptor Framework */</span>
+
+<span class="k">void</span> main()
+{
+    clrscr();
+    <span class="k">char</span> *ecosystem[] = { <span class="s">"http-message"</span>, <span class="s">"router"</span>, <span class="s">"http-application"</span>,
+                          <span class="s">"dataobject"</span>, <span class="s">"template"</span>, <span class="s">"http-client"</span>,
+                          <span class="s">"container"</span>, <span class="s">"raptor"</span> };
+    cprintf(<span class="s">"codesaur ecosystem - %d packages\r\n"</span>, <span class="n">8</span>);
+
+    Application *app = <span class="k">new</span> Application(<span class="k">new</span> NonBodyResponse());
+    app-&gt;use(<span class="k">new</span> <span class="i">SessionMiddleware</span>());
+    app-&gt;use(<span class="k">new</span> <span class="i">LocalizationMiddleware</span>(<span class="s">"mn"</span>, <span class="s">"en"</span>));
+    app-&gt;use(<span class="k">new</span> <span class="i">WebRouter</span>());
+    app-&gt;handle(request);
+    getch();
+}</pre>
+        <span class="tc-window-foot"><b>1:1</b> &#9552;&#9552; RAPTOR.CPP</span>
+    </div>
+
+    <div class="tc-dialog tc-hero-dialog text-center">
+        <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+        <span class="tc-dialog-title">About</span>
+        <div class="row align-items-center g-4">
+            <div class="col-md-4">
+                <img class="tc-hero-logo" src="{{ index }}/assets/portal/logo.png" alt="codesaur">
+            </div>
+            <div class="col-md-8 text-md-start">
+                <div class="tc-hero-kicker">{{ t['hero_kicker'] }}</div>
+                <h1 class="tc-hero-title">{{ t['hero_title'] }}</h1>
+                <p class="tc-hero-lead">{{ t['hero_lead'] }}</p>
+                <div class="tc-dialog-actions justify-content-center justify-content-md-start">
+                    <a class="tc-btn" href="{{ 'raptor'|link }}">{{ t['hero_start'] }}</a>
+                    <a class="tc-btn tc-btn-alt" href="{{ 'packages'|link }}">{{ t['hero_packages'] }}</a>
+                    <a class="tc-btn tc-btn-gray" href="{{ github_org }}" target="_blank" rel="noopener">{{ t['hero_github'] }}</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats: "Compiling" dialog -->
+<div class="row g-4 align-items-start">
+    <div class="col-lg-5">
+        <div class="tc-dialog mt-0">
+            <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+            <span class="tc-dialog-title">Compiling</span>
+            <table class="w-100 tc-compile">
+                <tr><td>{{ t['stat_packages'] }}:</td><td class="text-end fw-bold">{{ packages|length }}</td></tr>
+                <tr><td>{{ t['stat_psr'] }}:</td><td class="text-end fw-bold">3, 4, 7, 11, 12, 14, 15, 16</td></tr>
+                <tr><td>{{ t['stat_php'] }}:</td><td class="text-end fw-bold">8.2.1+</td></tr>
+                <tr><td>{{ t['stat_db'] }}:</td><td class="text-end fw-bold">MySQL, PostgreSQL, SQLite</td></tr>
+                <tr><td>{{ t['stat_license'] }}:</td><td class="text-end fw-bold">MIT</td></tr>
+                <tr><td>Warnings:</td><td class="text-end fw-bold">0</td></tr>
+                <tr><td>Errors:</td><td class="text-end fw-bold">0</td></tr>
+            </table>
+            <div class="text-center mt-3 fw-bold">Success : Press any key</div>
+        </div>
+    </div>
+    <div class="col-lg-7">
+        <h2 class="tc-section-title mt-0">{{ t['eco_title'] }}</h2>
+        <p class="tc-section-lead">{{ t['eco_lead'] }}</p>
+        <p class="mb-0">
+            <a class="tc-btn tc-btn-sm" href="{{ 'packages'|link }}">{{ t['eco_all'] }}</a>
+            <a class="tc-btn tc-btn-sm tc-btn-alt ms-3" href="{{ packagist_user }}" target="_blank" rel="noopener">Packagist</a>
+        </p>
+    </div>
+</div>
+
+<!-- Ecosystem: tiled windows -->
+<div class="row g-4 mt-1">
+    {% for key, pkg in packages %}
+        <div class="col-md-6 col-lg-3">
+            <div class="tc-window tc-window-card">
+                <span class="tc-window-close">[<span>&#9632;</span>]</span>
+                <span class="tc-window-title">{{ pkg['title'] }}</span>
+                <span class="tc-window-num">{{ loop.index }}=[<span>&#8597;</span>]</span>
+                <div class="tc-icon"><i class="bi {{ pkg['icon'] }}"></i></div>
+                <div class="tc-card-name">{{ pkg['name'] }}</div>
+                <div class="tc-card-text">{{ pkg['summary'][lang] }}</div>
+                <div class="tc-card-foot">
+                    {% if pkg['version'] is not empty %}<span class="tc-version">{{ pkg['version'] }}</span> &middot; {% endif %}
+                    <a href="{{ 'package'|link({'key': key}) }}">&#9658; {{ t['package_view'] }}</a>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Why Raptor: "Options" dialog -->
+<h2 class="tc-section-title">{{ t['why_title'] }}</h2>
+<p class="tc-section-lead">{{ t['why_lead'] }}</p>
+<div class="tc-dialog">
+    <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+    <span class="tc-dialog-title">Options</span>
+    <div class="row g-3">
+        {% for i in range(1, 6) %}
+            <div class="col-md-6 col-lg-4">
+                <div class="tc-feature">
+                    <div class="tc-feature-icon">
+                        {% if i == 1 %}<i class="bi bi-patch-check"></i>
+                        {% elseif i == 2 %}<i class="bi bi-people"></i>
+                        {% elseif i == 3 %}<i class="bi bi-code-square"></i>
+                        {% elseif i == 4 %}<i class="bi bi-database"></i>
+                        {% elseif i == 5 %}<i class="bi bi-hdd-network"></i>
+                        {% else %}<i class="bi bi-translate"></i>{% endif %}
+                    </div>
+                    <div>
+                        <h3>{{ t['why_' ~ i ~ '_title'] }}</h3>
+                        <p>{{ t['why_' ~ i ~ '_text'] }}</p>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <div class="tc-dialog-actions justify-content-center">
+        <a class="tc-btn" href="{{ 'raptor'|link }}">Raptor</a>
+        <a class="tc-btn tc-btn-alt" href="{{ 'docs-doc'|link({'key': 'raptor', 'doc': 'guide'}) }}">{{ t['doc_guide'] }}</a>
+    </div>
+</div>
+
+<!-- Architecture + Quick start -->
+<div class="row g-4">
+    <div class="col-lg-7">
+        <h2 class="tc-section-title">{{ t['arch_title'] }}</h2>
+        <p class="tc-section-lead">{{ t['arch_lead'] }}</p>
+        <div class="tc-window">
+            <span class="tc-window-close">[<span>&#9632;</span>]</span>
+            <span class="tc-window-title">RAPTOR.PRJ</span>
+            <span class="tc-window-num">2=[<span>&#8597;</span>]</span>
+<pre class="tc-tree"><span class="k">public_html/index.php</span>
+ |-- <span class="g">/dashboard/*</span> -> <span class="i">Dashboard\Application</span>   <span class="c">(Admin Panel)</span>
+ |    |-- Middleware: MethodOverride, BodyEncoding, Session, JWT,
+ |    |               Container, Localization, Settings <span class="c">(CSRF per-route)</span>
+ |    |-- Routers <span class="c">(one per feature module)</span>
+ |    \-- Controllers -> Templates
+ |
+ \-- <span class="g">/*</span> -> <span class="i">Web\Application</span>   <span class="c">(Public Website)</span>
+      |-- Middleware: Session, Localization, Settings
+      |-- WebRouter, PortalRouter
+      \-- TemplateController -> Templates
+
+<span class="k">{{ t['arch_flow'] }}:</span>
+  index.php -> Application -> Middleware chain -> Router match
+            -> Controller::action() -> Model (DB)
+            -> FileTemplate -> HTML Response</pre>
+            <span class="tc-window-foot"><b>1:1</b></span>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <h2 class="tc-section-title">{{ t['quick_title'] }}</h2>
+        <p class="tc-section-lead">{{ t['quick_lead'] }}</p>
+        <div class="tc-dialog">
+            <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+            <span class="tc-dialog-title">New Project</span>
+            <div class="tc-group">
+                <span class="tc-group-label">{{ t['quick_req'] }}</span>
+                <ul class="tc-checklist mb-0">
+                    <li>PHP 8.2.1+ (ext-gd, ext-intl)</li>
+                    <li>Composer</li>
+                    <li>MySQL / PostgreSQL</li>
+                </ul>
+            </div>
+            <pre><code class="language-bash">composer create-project codesaur/raptor my-project</code></pre>
+            <blockquote>{{ t['quick_docroot'] }}</blockquote>
+            <div class="tc-dialog-actions">
+                <a class="tc-btn" href="{{ 'docs-doc'|link({'key': 'raptor', 'doc': 'guide'}) }}">{{ t['quick_more'] }}</a>
+                <a class="tc-btn tc-btn-gray" href="{{ 'raptor'|link }}">Raptor</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Story + Community -->
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="tc-window">
+            <span class="tc-window-close">[<span>&#9632;</span>]</span>
+            <span class="tc-window-title">README.TXT</span>
+            <span class="tc-window-num">3=[<span>&#8597;</span>]</span>
+            <h2 class="h5">{{ t['story_title'] }}</h2>
+            <p class="mb-0">{{ t['story_text'] }}<span class="tc-cursor"></span></p>
+            <span class="tc-window-foot"><b>{{ t['author'] }}:</b> Narankhuu (codesaur)</span>
+        </div>
+    </div>
+    <div class="col-lg-5">
+        <div class="tc-dialog">
+            <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+            <span class="tc-dialog-title">{{ t['community_title'] }}</span>
+            <p>{{ t['community_lead'] }}</p>
+            <div class="tc-dialog-actions">
+                <a class="tc-btn" href="{{ discussions }}" target="_blank" rel="noopener">{{ t['community_discussions'] }}</a>
+                <a class="tc-btn tc-btn-alt" href="{{ github_org }}/Raptor/issues" target="_blank" rel="noopener">{{ t['community_issues'] }}</a>
+                <a class="tc-btn tc-btn-gray" href="{{ packagist_user }}" target="_blank" rel="noopener">{{ t['community_packagist'] }}</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent news (if any) -->
+{% if recent is not empty %}
+<h2 class="tc-section-title">{{ t['recent_news'] }}</h2>
+<div class="tc-window">
+    <span class="tc-window-close">[<span>&#9632;</span>]</span>
+    <span class="tc-window-title">NEWS.LOG</span>
+    <span class="tc-window-num">4=[<span>&#8597;</span>]</span>
+    <ul class="tc-checklist mb-0">
+        {% for news in recent %}
+            <li>
+                <span class="tc-dim">{{ news['published_at']|date('Y-m-d') }}</span>
+                <a href="{{ 'news'|link({ slug: news['slug'] }) }}">{{ news['title'] }}</a>
+            </li>
+        {% endfor %}
+    </ul>
+    <span class="tc-window-foot"><a href="{{ 'archive'|link }}">{{ 'archive'|text }} &raquo;</a></span>
+</div>
+{% endif %}

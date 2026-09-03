@@ -1,0 +1,56 @@
+<!-- Variables: t, lang, package, packages, docs, doc, doc_html, toc, github_file, lang_fallback -->
+
+<div class="row g-4">
+    <!-- Left: document navigation -->
+    <div class="col-lg-3 order-2 order-lg-1">
+        <div class="tc-sidebar">
+            <div class="tc-list-title"><i class="bi {{ package['icon'] }} me-1"></i>{{ package['title'] }}</div>
+            <ul class="tc-list">
+                {% for slug, item in docs %}
+                    <li class="{{ slug == doc ? 'active' : '' }}"><a href="{{ 'docs-doc'|link({'key': package['key'], 'doc': slug}) }}">{{ item['title'] }}</a></li>
+                {% endfor %}
+                <li><a href="{{ 'package'|link({'key': package['key']}) }}"><i class="bi bi-box-seam me-1"></i>{{ t['package_view'] }}</a></li>
+                <li><a href="{{ package['github'] }}" target="_blank" rel="noopener"><i class="bi bi-github me-1"></i>{{ t['package_source'] }}</a></li>
+            </ul>
+
+            <div class="tc-list-title">{{ t['package_other'] }}</div>
+            <ul class="tc-list">
+                {% for key, pkg in packages %}
+                    <li class="{{ key == package['key'] ? 'active' : '' }}"><a href="{{ 'docs-doc'|link({'key': key, 'doc': 'guide'}) }}">{{ pkg['name'] }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- Center: rendered document -->
+    <div class="col-lg-7 order-1 order-lg-2">
+        <div class="tc-dialog mt-0">
+            <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+            <span class="tc-dialog-title">{{ docs[doc]['title'] }}</span>
+            <div class="tc-doc-meta">
+                <span><i class="bi bi-box-seam me-1"></i>{{ package['name'] }}</span>
+                <a href="{{ github_file }}" target="_blank" rel="noopener"><i class="bi bi-github me-1"></i>{{ t['doc_edit'] }}</a>
+            </div>
+            {% if lang_fallback %}
+                <div class="tc-alert"><i class="bi bi-translate me-1"></i>{{ t['doc_lang_fallback'] }}</div>
+            {% endif %}
+            <article class="tc-doc">
+                {{ doc_html|raw }}
+            </article>
+        </div>
+    </div>
+
+    <!-- Right: table of contents -->
+    <div class="col-lg-2 order-3 d-none d-lg-block">
+        {% if toc is not empty %}
+        <div class="tc-toc">
+            <div class="tc-list-title">{{ t['doc_on_this_page'] }}</div>
+            <ul class="tc-list">
+                {% for heading in toc %}
+                    <li class="{{ heading['level'] == 3 ? 'tc-list-sub' : '' }}"><a href="#{{ heading['id'] }}" title="{{ heading['text']|e }}">{{ heading['text'] }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+    </div>
+</div>

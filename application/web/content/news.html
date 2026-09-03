@@ -1,0 +1,342 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.css">
+<script defer src="https://cdn.jsdelivr.net/npm/@fancyapps/ui@5.0/dist/fancybox/fancybox.umd.js"></script>
+
+<div class="container">
+    <div class="row mt-4">
+        <div class="text-center mb-3 pb-2 border-bottom">
+            <h2>{{ title }}</h2>
+
+            <!-- Metadata -->
+            <div class="d-flex flex-wrap justify-content-center gap-2 mb-2">
+                {% if is_featured %}
+                    <span class="badge bg-warning text-dark">
+                        <i class="bi bi-star-fill me-1"></i>{{ 'featured'|text }}
+                    </span>
+                {% endif %}
+                <span class="badge bg-secondary">
+                    <i class="bi bi-calendar-event me-1"></i>{{ published_at|date('Y-m-d') }}
+                </span>
+                {% if type is not empty %}
+                    <a href="{{ 'news-type'|link({ type: type }) }}" class="badge bg-info text-decoration-none">
+                        <i class="bi bi-tag me-1"></i>{{ type }}
+                    </a>
+                {% endif %}
+                {% if creator_name is defined and creator_name is not empty %}
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-person me-1"></i>{{ creator_name }}
+                    </span>
+                {% endif %}
+                {% if updater_name is defined and updater_name is not empty and updater_name != creator_name %}
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-pencil me-1"></i>{{ updater_name }}
+                    </span>
+                {% endif %}
+                <span class="badge bg-light text-dark">
+                    <i class="bi bi-eye me-1"></i>{{ read_count }}
+                </span>
+                {% if word_count is defined %}
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-body-text me-1"></i>{{ word_count }} {{ 'words'|text }}
+                    </span>
+                    <span class="badge bg-light text-dark">
+                        <i class="bi bi-clock me-1"></i>~{{ read_time }} {{ 'min'|text }}
+                    </span>
+                {% endif %}
+            </div>
+
+            <!-- Share + PDF -->
+            <div class="d-flex justify-content-center gap-2 mt-2 no-print">
+                <a class="btn btn-sm btn-outline-primary" href="https://www.facebook.com/sharer/sharer.php?u={{ current_url|url_encode }}" target="_blank" rel="noopener">
+                    <i class="bi bi-facebook"></i>
+                </a>
+                <a class="btn btn-sm btn-outline-info" href="https://twitter.com/intent/tweet?url={{ current_url|url_encode }}&text={{ title|url_encode }}" target="_blank" rel="noopener">
+                    <i class="bi bi-twitter-x"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-danger" onclick="window.print()" title="PDF">
+                    <i class="bi bi-file-pdf"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .news-article > p {
+        text-align: justify;
+        margin: 0;
+        color: black;
+    }
+    .news-article > dl,
+    .news-article > ul,
+    .news-article > ol {
+        margin-bottom: 0;
+    }
+</style>
+
+<article class="container news-article mt-3">
+    {% if photo is not empty %}
+        <div class="mb-4 text-center">
+            <img class="img-fluid rounded shadow-sm"
+                 file-data-fancybox
+                 src="{{ photo }}"
+                 alt="{{ title|e }}"
+                 style="max-height:480px">
+        </div>
+    {% endif %}
+
+    <div class="mt-3">
+        {{ content }}
+    </div>
+
+    {% if files is defined and files is not empty %}
+    <div class="mt-4">
+        <hr>
+        <h5><i class="bi bi-paperclip"></i> {{ 'attachments'|text }}</h5>
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th style="width:50px">#</th>
+                    <th>{{ 'file'|text }}</th>
+                    <th style="width:120px">{{ 'size'|text }}</th>
+                    <th style="width:100px">{{ 'type'|text }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for file in files %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>
+                        <a href="{{ file['path'] }}" target="_blank" class="text-decoration-none">
+                            {% if file['type'] == 'image' %}
+                                <i class="bi bi-file-image text-success"></i>
+                            {% elseif file['type'] == 'video' %}
+                                <i class="bi bi-file-play text-danger"></i>
+                            {% elseif file['type'] == 'audio' %}
+                                <i class="bi bi-file-music text-info"></i>
+                            {% elseif file['mime_content_type'] == 'application/pdf' %}
+                                <i class="bi bi-file-pdf text-danger"></i>
+                            {% elseif file['mime_content_type'] starts with 'application/vnd.ms-excel' or file['mime_content_type'] starts with 'application/vnd.openxmlformats-officedocument.spreadsheet' %}
+                                <i class="bi bi-file-excel text-success"></i>
+                            {% elseif file['mime_content_type'] starts with 'application/msword' or file['mime_content_type'] starts with 'application/vnd.openxmlformats-officedocument.wordprocessing' %}
+                                <i class="bi bi-file-word text-primary"></i>
+                            {% elseif file['mime_content_type'] starts with 'application/zip' or file['mime_content_type'] starts with 'application/x-rar' or file['mime_content_type'] starts with 'application/x-7z' %}
+                                <i class="bi bi-file-zip text-warning"></i>
+                            {% else %}
+                                <i class="bi bi-file-earmark"></i>
+                            {% endif %}
+                            {{ file['path']|basename }}
+                        </a>
+                        {% if file['description'] is not empty %}
+                            <small class="text-muted d-block">{{ file['description'] }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if file['size'] < 1024 %}
+                            {{ file['size'] }} B
+                        {% elseif file['size'] < 1048576 %}
+                            {{ (file['size'] / 1024)|round(1) }} KB
+                        {% else %}
+                            {{ (file['size'] / 1048576)|round(2) }} MB
+                        {% endif %}
+                    </td>
+                    <td><span class="badge bg-secondary">{{ file['type'] }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    {% if source is defined and source is not empty %}
+    <div class="mt-4 p-3 bg-light border-start border-4 border-secondary rounded-end">
+        <small class="text-muted fw-bolder"><i class="bi bi-quote me-1"></i>{{ 'source'|text }}</small>
+        <div class="mt-1">{{ source|e }}</div>
+    </div>
+    {% endif %}
+
+    {% if comment is defined and comment %}
+    {% if turnstile_site_key is not empty %}
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+    {% endif %}
+    <div class="mt-5 pt-4 border-top">
+        <h4 class="fw-bold mb-4">
+            <i class="bi bi-chat-dots me-2"></i>{{ 'comments'|text }}
+            {% if comments is not empty %}
+                <span class="badge bg-secondary">{{ comments|length }}</span>
+            {% endif %}
+        </h4>
+
+        {% if comments is not empty %}
+        <div class="d-flex flex-column gap-3 mb-4">
+            {% for c in comments %}
+            <div class="card border-0 {{ c.parent_id ? 'ms-4' : '' }} {{ c.created_by ? 'bg-primary bg-opacity-10' : 'bg-light' }}">
+                <div class="card-body py-2 px-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <div>
+                            {% if c.created_by %}
+                                <i class="bi bi-shield-check text-primary me-1"></i>
+                            {% else %}
+                                <i class="bi bi-person-circle me-1"></i>
+                            {% endif %}
+                            <strong>{{ c.name|e }}</strong>
+                        </div>
+                        <small class="text-muted">{{ c.created_at }}</small>
+                    </div>
+                    <div>{{ c.comment|e|nl2br }}</div>
+                    {% if not c.parent_id %}
+                    <button class="btn btn-sm btn-link text-muted p-0 mt-1 reply-toggle no-print" data-id="{{ c.id }}" data-name="{{ c.name|e }}">
+                        <i class="bi bi-reply me-1"></i>{{ 'reply'|text }}
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="card border-0 shadow-sm no-print">
+            <div class="card-body">
+                <h5 class="fw-semibold mb-3">{{ 'write-comment'|text }}</h5>
+                <div class="alert alert-info py-2 d-none" id="reply-info">
+                    <i class="bi bi-reply me-1"></i><span id="reply-label"></span>
+                    <button type="button" class="btn-close btn-sm float-end" id="reply-cancel"></button>
+                </div>
+                <form id="comment_form" novalidate>
+                    <input type="hidden" name="_ts" value="{{ spam_ts }}">
+                    <input type="hidden" name="_token" value="{{ spam_token }}">
+                    <input type="hidden" name="parent_id" id="comment-parent-id" value="">
+                    <div style="position:absolute;left:-9999px" aria-hidden="true">
+                        <input type="text" name="website" tabindex="-1" autocomplete="off">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <input class="form-control" name="name" type="text" required maxlength="255" placeholder="{{ 'name'|text }} *">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <input class="form-control" name="email" type="email" maxlength="255" placeholder="{{ 'email'|text }}">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <textarea class="form-control" name="comment" id="comment-textarea" rows="3" required placeholder="{{ 'write-comment'|text }}... *"></textarea>
+                    </div>
+                    {% if turnstile_site_key is not empty %}
+                    <div class="cf-turnstile mb-3" data-sitekey="{{ turnstile_site_key }}"></div>
+                    {% endif %}
+                    <button class="btn btn-primary" id="submit_comment" type="submit" disabled>
+                        <i class="bi bi-send me-1"></i>{{ 'send'|text }}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="commentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0">
+                <div class="modal-body text-center py-5">
+                    <i id="commentModalIcon" style="font-size:4rem"></i>
+                    <h4 class="fw-bold mt-3" id="commentModalTitle"></h4>
+                    <p class="text-muted" id="commentModalMessage"></p>
+                    <button type="button" class="btn btn-primary px-4 py-2 mt-2" data-bs-dismiss="modal">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        document.addEventListener('DOMContentLoaded', function () {
+            const form = document.getElementById('comment_form');
+            const btn = document.getElementById('submit_comment');
+            if (!form) return;
+
+            const parentInput = document.getElementById('comment-parent-id');
+            const replyInfo = document.getElementById('reply-info');
+            const replyLabel = document.getElementById('reply-label');
+            const textarea = document.getElementById('comment-textarea');
+
+            const nameInput = form.querySelector('[name="name"]');
+            const commentInput = form.querySelector('[name="comment"]');
+            function toggleSubmit() {
+                btn.disabled = !nameInput.value.trim() || !commentInput.value.trim();
+            }
+            nameInput.addEventListener('input', toggleSubmit);
+            commentInput.addEventListener('input', toggleSubmit);
+
+            document.querySelectorAll('.reply-toggle').forEach(b => {
+                b.addEventListener('click', function () {
+                    parentInput.value = this.dataset.id;
+                    replyLabel.textContent = '@' + this.dataset.name;
+                    replyInfo.classList.remove('d-none');
+                    textarea.focus();
+                });
+            });
+
+            document.getElementById('reply-cancel')?.addEventListener('click', function () {
+                parentInput.value = '';
+                replyInfo.classList.add('d-none');
+            });
+
+            function showModal(type, title, message) {
+                const icon = document.getElementById('commentModalIcon');
+                icon.className = type === 'success'
+                    ? 'bi bi-check-circle text-success'
+                    : 'bi bi-exclamation-circle text-danger';
+                document.getElementById('commentModalTitle').textContent = title;
+                document.getElementById('commentModalMessage').textContent = message;
+                new bootstrap.Modal(document.getElementById('commentModal')).show();
+            }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                if (btn.disabled) return;
+
+                const name = form.querySelector('[name="name"]').value.trim();
+                const email = form.querySelector('[name="email"]').value.trim();
+                const comment = form.querySelector('[name="comment"]').value.trim();
+                if (!name || !comment) return;
+
+                if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+                    showModal('error', `{{ 'error'|text }}`, `{{ localization.code == 'mn' ? 'Зөв имэйл хаяг оруулна уу' : 'Please enter a valid email address' }}`);
+                    return;
+                }
+
+                btn.disabled = true;
+                btn.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span>{{ 'sending'|text }}...`;
+
+                fetch(`{{ 'news-comment'|link({'id': id}) }}`, {
+                    method: 'POST',
+                    body: new FormData(form)
+                }).then(res => {
+                    if (res.headers.get('content-type')?.includes('application/json')) return res.json();
+                    throw new Error(`{{ 'server-error'|text }}`);
+                }).then(response => {
+                    if (response.status !== 'success') {
+                        throw new Error(response.message || `{{ 'error'|text }}`);
+                    }
+                    showModal('success', `{{ 'thank-you'|text }}`, response.message);
+                    form.reset();
+                    setTimeout(() => location.reload(), 2000);
+                }).catch(error => {
+                    showModal('error', `{{ 'error'|text }}`, error.message);
+                }).finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="bi bi-send me-1"></i>{{ 'send'|text }}`;
+                    /* Turnstile token нэг удаагийн хэрэглээтэй тул widget-ийг сэргээнэ
+                       (form.reset() нь Turnstile-ийг сэргээдэггүй). */
+                    if (window.turnstile) {
+                        window.turnstile.reset();
+                    }
+                });
+            });
+        });
+    </script>
+    {% endif %}
+</article>
+
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', function () {
+    Fancybox.bind('[file-data-fancybox]', {
+        groupAll: true
+    });
+});
+</script>

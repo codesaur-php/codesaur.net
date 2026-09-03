@@ -1,0 +1,404 @@
+<!-- Variables: localization (from layout), user -->
+<script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11" type="text/javascript"></script>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-danger text-white d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>
+            <span class="me-2" style="font-size:1.25em">&#129430;</span>
+            <strong>Raptor Migrations</strong>
+        </div>
+        <div class="btn-group">
+            <label class="btn btn-sm btn-warning text-dark" for="mFileInput" title="Upload .sql (max {{ max_upload_size_human }})">
+                <i class="bi bi-cloud-upload"></i> Upload SQL
+            </label>
+            <input type="file" id="mFileInput" accept=".sql" style="display:none"
+                   data-max-size="{{ max_upload_size }}"
+                   data-max-size-human="{{ max_upload_size_human }}">
+            <button id="btnRefresh" class="btn btn-sm btn-outline-light" title="Refresh">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+            <a href="{{ 'manual-view'|link({'file': 'migrations-manual-' ~ localization.code ~ '.html'}) }}" class="btn btn-sm btn-outline-light" title="Manual" target="_blank">
+                ?
+            </a>
+        </div>
+    </div>
+    <div class="card-body p-0">
+        <div id="statusArea" class="px-3 py-2 bg-body-tertiary text-body-secondary small border-bottom">
+            Loading...
+        </div>
+        <div id="foldersWrap"></div>
+    </div>
+</div>
+
+<div class="modal fade" id="applyConfirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle"></i> Apply Migration
+                </h5>
+                <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="applyConfirmBody">
+                <!-- Filled by JS -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline-secondary" type="button" data-bs-dismiss="modal">Cancel</button>
+                <button class="btn btn-danger" type="button" id="btnConfirmApply">
+                    <i class="bi bi-play-fill"></i> Apply
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm mt-3">
+    <div class="card-header bg-body-tertiary">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>How Raptor Migrations Work</strong>
+    </div>
+    <div class="card-body small">
+        <p>Raptor uses a <strong>fully file-based</strong> migration system. State is derived from the directory layout. The <code>database/migrations/</code> folder is git-ignored: each environment uploads its own SQL files through this page.</p>
+
+        <h6 class="mt-3">Directory layout</h6>
+<pre class="bg-body-tertiary p-2 rounded mb-3"><code>database/migrations/
+  {userId}-{username}/
+    pending_file.sql     <- pending
+    ran/
+      applied_file.sql   <- successfully applied</code></pre>
+
+        <h6>Lifecycle</h6>
+        <ol class="mb-3">
+            <li>Click <strong>Upload SQL</strong> and pick a <code>.sql</code> file. It lands in your folder as a pending migration.</li>
+            <li>Click the <i class="bi bi-eye"></i> button to preview the contents and any security warnings.</li>
+            <li>Click <i class="bi bi-play-fill"></i> to apply. If warnings are present, type <code>CONFIRM</code> to proceed.</li>
+            <li>On success the file moves to <code>ran/</code>. On failure the file stays pending; check the dashboard log for the error.</li>
+            <li>To discard a typo before applying, use the <i class="bi bi-trash"></i> button on the pending row.</li>
+        </ol>
+
+        <h6>SQL file format</h6>
+<pre class="bg-body-tertiary p-2 rounded mb-3"><code>-- Optional first-line description (used as the summary)
+ALTER TABLE products ADD COLUMN category VARCHAR(100);
+CREATE INDEX idx_products_category ON products (category);</code></pre>
+        <p>Statements run in order; the first failure stops the rest and the file stays pending.</p>
+
+        <div class="alert alert-warning py-2 mb-0">
+            <i class="bi bi-exclamation-triangle"></i>
+            <strong>Avoid <code>CREATE TABLE</code> in migrations.</strong> Define a Model class with <code>setTable()</code> instead - Raptor auto-creates the table on the Model's first use. If you do use <code>CREATE TABLE</code>, the scanner will flag it and you'll need to type <code>CONFIRM</code> to apply.
+        </div>
+
+        <h6 class="mt-3 text-danger"><i class="bi bi-shield-lock"></i> Security guardrails</h6>
+        <p>Before apply, the SQL is scanned for writes against the following sensitive tables:</p>
+        <ul class="mb-2">
+            <li><code>users</code> - password / identity</li>
+            <li><code>rbac_roles</code>, <code>rbac_permissions</code>, <code>rbac_user_role</code>, <code>rbac_role_permission</code> - privilege escalation</li>
+            <li><code>organizations</code>, <code>organizations_users</code> - multi-tenant boundary</li>
+            <li><code>localization_language</code> - site-wide locale impact</li>
+            <li><code>raptor_menu</code> - dashboard navigation</li>
+        </ul>
+        <p>Also flagged: <code>GRANT</code> / <code>REVOKE</code>, <code>CREATE/DROP/ALTER USER</code>, <code>CREATE TABLE</code> (use a Model with <code>setTable()</code> instead). If any pattern matches, the Apply button requires you to type <code>CONFIRM</code> to proceed. This is a soft guard - a careful coder can still proceed if the migration is intentional.</p>
+    </div>
+</div>
+
+<script type="text/javascript">
+    (function() {
+        var statusUrl   = `{{ 'migrations-status'|link }}`;
+        var viewUrl     = `{{ 'migrations-view'|link }}`;
+        var uploadUrl   = `{{ 'migrations-upload'|link }}`;
+        var applyUrl    = `{{ 'migrations-apply'|link }}`;
+        var deleteUrl   = `{{ 'migrations-delete'|link }}`;
+
+        var statusArea  = document.getElementById('statusArea');
+        var foldersWrap = document.getElementById('foldersWrap');
+        var fileInput   = document.getElementById('mFileInput');
+        var confirmBody = document.getElementById('applyConfirmBody');
+        var btnConfirm  = document.getElementById('btnConfirmApply');
+        var applyModalEl = document.getElementById('applyConfirmModal');
+        /* Lazy: bootstrap JS is loaded with `defer`, so it isn't available during inline parse. */
+        var _applyModal = null;
+        function applyModal() {
+            if (_applyModal === null) {
+                _applyModal = new bootstrap.Modal(applyModalEl);
+            }
+            return _applyModal;
+        }
+
+        function esc(s) {
+            var div = document.createElement('div');
+            div.appendChild(document.createTextNode(String(s == null ? '' : s)));
+            return div.innerHTML;
+        }
+
+        function showError(title, message) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ icon: 'error', title: title, text: message });
+            } else {
+                alert(title + ': ' + message);
+            }
+        }
+
+        function bindRowButtons() {
+            foldersWrap.querySelectorAll('.ajax-modal').forEach(function(a) {
+                a.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    ajaxModal(a);
+                });
+            });
+            foldersWrap.querySelectorAll('button[data-action="apply"]').forEach(function(b) {
+                b.addEventListener('click', function() {
+                    /* First attempt with no confirm; backend returns needs_confirm if warnings exist. */
+                    performApply(b.dataset.folder, b.dataset.file, '');
+                });
+            });
+            foldersWrap.querySelectorAll('button[data-action="delete"]').forEach(function(b) {
+                b.addEventListener('click', function() {
+                    deletePending(b.dataset.folder, b.dataset.file);
+                });
+            });
+        }
+
+        function renderFolders(folders) {
+            if (!folders.length) {
+                foldersWrap.innerHTML = '<div class="p-4 text-center text-muted">No migration folders. Upload a .sql file to create yours.</div>';
+                return;
+            }
+
+            var html = '';
+            folders.forEach(function(folder) {
+                var pending = folder.pending || [];
+                var ran = folder.ran || [];
+                html += '<div class="border-bottom">';
+                html +=   '<div class="px-3 py-2 bg-body-tertiary fw-bold small">';
+                html +=     '<i class="bi bi-folder2-open"></i> ' + esc(folder.label);
+                html +=     ' <span class="badge bg-warning text-dark ms-2">' + pending.length + ' pending</span>';
+                html +=     ' <span class="badge bg-success ms-1">' + ran.length + ' ran</span>';
+                html +=   '</div>';
+                html +=   '<table class="table table-hover mb-0 small align-middle">';
+                html +=     '<thead class="table-secondary"><tr>';
+                html +=       '<th class="text-nowrap" style="width:30px">#</th>';
+                html +=       '<th class="text-nowrap">File</th>';
+                html +=       '<th class="text-nowrap">Summary</th>';
+                html +=       '<th class="text-nowrap">Modified</th>';
+                html +=       '<th class="text-nowrap">Status</th>';
+                html +=       '<th class="text-nowrap text-center" style="width:140px">Actions</th>';
+                html +=     '</tr></thead><tbody>';
+
+                var rows = [];
+                pending.forEach(function(f) { rows.push({ f: f, state: 'pending' }); });
+                ran.forEach(function(f) { rows.push({ f: f, state: 'ran' }); });
+
+                if (!rows.length) {
+                    html += '<tr><td colspan="6" class="text-center text-muted py-3">empty</td></tr>';
+                } else {
+                    rows.forEach(function(row, i) {
+                        var f = row.f;
+                        var state = row.state;
+                        var badge = state === 'ran'
+                            ? '<span class="badge bg-success">Ran</span>'
+                            : '<span class="badge bg-warning text-dark">Pending</span>';
+                        var viewLink = viewUrl + '?folder=' + encodeURIComponent(folder.label)
+                            + '&state=' + encodeURIComponent(state)
+                            + '&file='  + encodeURIComponent(f.file);
+                        var actions = '<a href="' + viewLink + '" class="ajax-modal btn btn-sm btn-outline-secondary"'
+                            + ' data-bs-toggle="modal" data-bs-target="#static-modal" title="View"><i class="bi bi-eye"></i></a>';
+                        if (state === 'pending') {
+                            actions += '<button class="btn btn-sm btn-outline-success" data-action="apply"'
+                                + ' data-folder="' + esc(folder.label) + '" data-file="' + esc(f.file)
+                                + '" title="Apply"><i class="bi bi-play-fill"></i></button>';
+                            actions += '<button class="btn btn-sm btn-outline-danger" data-action="delete"'
+                                + ' data-folder="' + esc(folder.label) + '" data-file="' + esc(f.file)
+                                + '" title="Delete pending"><i class="bi bi-trash"></i></button>';
+                        }
+                        html += '<tr>'
+                            + '<td>' + (i + 1) + '</td>'
+                            + '<td class="font-monospace">' + esc(f.file) + '</td>'
+                            + '<td class="text-muted" style="max-width:380px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="' + esc(f.summary) + '">' + esc(f.summary) + '</td>'
+                            + '<td class="text-nowrap">' + esc(f.modified) + '</td>'
+                            + '<td>' + badge + '</td>'
+                            + '<td><div class="d-flex flex-wrap gap-1 justify-content-center">' + actions + '</div></td>'
+                            + '</tr>';
+                    });
+                }
+                html += '</tbody></table></div>';
+            });
+            foldersWrap.innerHTML = html;
+            bindRowButtons();
+        }
+
+        function loadStatus() {
+            statusArea.textContent = 'Loading...';
+            csrfFetch(statusUrl)
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    statusArea.textContent = 'Error: ' + data.error;
+                    return;
+                }
+                var folders = data.folders || [];
+                var pendingTotal = 0, ranTotal = 0;
+                folders.forEach(function(f) {
+                    pendingTotal += (f.pending || []).length;
+                    ranTotal     += (f.ran || []).length;
+                });
+                statusArea.textContent = folders.length + ' folder(s), '
+                    + ranTotal + ' ran, ' + pendingTotal + ' pending';
+                renderFolders(folders);
+            })
+            .catch(function(err) {
+                statusArea.textContent = 'Network error: ' + err.message;
+            });
+        }
+
+        function uploadFile(file) {
+            if (!file) return;
+            if (!/\.sql$/i.test(file.name)) {
+                showError('Invalid file', 'Only .sql files are accepted');
+                return;
+            }
+            var maxSize = parseInt(fileInput.dataset.maxSize, 10) || 0;
+            var maxSizeHuman = fileInput.dataset.maxSizeHuman || '';
+            if (maxSize > 0 && file.size > maxSize) {
+                showError('File too large', 'Max upload size on this server is ' + maxSizeHuman + '.');
+                return;
+            }
+            var fd = new FormData();
+            fd.append('file', file);
+
+            statusArea.textContent = 'Uploading ' + file.name + '...';
+            csrfFetch(uploadUrl, { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.error) {
+                    statusArea.textContent = 'Upload failed';
+                    showError('Upload rejected', data.error);
+                    return;
+                }
+                statusArea.textContent = 'Uploaded ' + data.folder + '/' + data.file;
+                loadStatus();
+            })
+            .catch(function(err) {
+                statusArea.textContent = 'Network error';
+                showError('Network error', err.message);
+            });
+
+            fileInput.value = '';
+        }
+
+        function openApplyModal(folder, file, warnings) {
+            warnings = warnings || [];
+            var html = '<div class="mb-2"><strong>File:</strong> <code>' + esc(folder) + '/' + esc(file) + '</code></div>';
+            if (warnings.length) {
+                html += '<div class="alert alert-warning"><strong><i class="bi bi-exclamation-triangle"></i> Security warnings:</strong>';
+                html += '<ul class="mb-0 mt-1">';
+                warnings.forEach(function(w) {
+                    html += '<li>' + esc(w.reason) + '</li>';
+                });
+                html += '</ul></div>';
+                html += '<div class="mb-2">Type <code>CONFIRM</code> (uppercase) to proceed:</div>';
+                html += '<input type="text" class="form-control" id="confirmInput" autocomplete="off">';
+                btnConfirm.disabled = true;
+            } else {
+                html += '<p>Apply this migration?</p>';
+                btnConfirm.disabled = false;
+            }
+            confirmBody.innerHTML = html;
+
+            btnConfirm.dataset.folder = folder;
+            btnConfirm.dataset.file = file;
+            btnConfirm.dataset.needsConfirm = warnings.length ? '1' : '0';
+
+            var input = document.getElementById('confirmInput');
+            if (input) {
+                input.addEventListener('input', function() {
+                    btnConfirm.disabled = (input.value !== 'CONFIRM');
+                });
+            }
+
+            applyModal().show();
+        }
+
+        function performApply(folder, file, confirmValue) {
+            statusArea.textContent = 'Applying ' + folder + '/' + file + '...';
+            btnConfirm.disabled = true;
+            var fd = new FormData();
+            fd.append('folder', folder);
+            fd.append('file', file);
+            if (confirmValue) fd.append('confirm', confirmValue);
+
+            csrfFetch(applyUrl, { method: 'POST', body: fd })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.needs_confirm) {
+                    openApplyModal(folder, file, data.warnings || []);
+                    return;
+                }
+                applyModal().hide();
+                if (data.ok) {
+                    statusArea.textContent = 'Applied: moved to ' + data.moved_to;
+                } else {
+                    statusArea.textContent = 'Apply failed';
+                    showError('Apply failed', data.error || 'unknown error');
+                }
+                loadStatus();
+            })
+            .catch(function(err) {
+                statusArea.textContent = 'Network error';
+                showError('Network error', err.message);
+                btnConfirm.disabled = false;
+            });
+        }
+
+        function deletePending(folder, file) {
+            Swal.fire({
+                title: 'Delete pending migration?',
+                text: folder + '/' + file,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Delete',
+                confirmButtonColor: '#dc3545'
+            }).then(function(result) {
+                if (!result.isConfirmed) return;
+                var fd = new FormData();
+                fd.append('folder', folder);
+                fd.append('file', file);
+                csrfFetch(deleteUrl, { method: 'POST', body: fd })
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.error) {
+                        statusArea.textContent = 'Delete failed';
+                        showError('Delete failed', data.error);
+                        return;
+                    }
+                    statusArea.textContent = 'Deleted ' + folder + '/' + file;
+                    loadStatus();
+                })
+                .catch(function(err) {
+                    statusArea.textContent = 'Network error';
+                    showError('Network error', err.message);
+                });
+            });
+        }
+
+        /* First click on Apply: send without confirm; server will return needs_confirm if warnings exist. */
+        btnConfirm.addEventListener('click', function() {
+            var folder = btnConfirm.dataset.folder;
+            var file = btnConfirm.dataset.file;
+            var needsConfirm = btnConfirm.dataset.needsConfirm === '1';
+            var confirmValue = needsConfirm ? 'CONFIRM' : '';
+            performApply(folder, file, confirmValue);
+        });
+
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files && fileInput.files[0]) {
+                uploadFile(fileInput.files[0]);
+            }
+        });
+        document.getElementById('btnRefresh').addEventListener('click', loadStatus);
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', loadStatus);
+        } else {
+            loadStatus();
+        }
+    })();
+</script>

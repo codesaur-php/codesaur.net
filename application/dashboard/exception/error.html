@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<!-- Raptor error page - particles.js by Vincent Garreau (mit) -->
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>{{ title }}</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <style>
+            body { margin: 0; }
+            canvas { display: block; vertical-align: bottom; }
+            .container { width: 100%; height: 100vh; overflow: hidden !important; }
+            .text {
+                position: relative; top: 50%;
+                transform: translateY(-50%);
+                z-index: 3; display: block;
+            }
+            h1 {
+                font-family: "Source Sans Pro", sans-serif;
+                font-weight: 700; font-size: 80px;
+                letter-spacing: 15px; text-transform: uppercase;
+                text-align: center; color: #f1f1f1; margin: 0;
+            }
+            p {
+                font-family: "Source Sans Pro", sans-serif;
+                position: fixed; top: -100px;
+                font-size: 20px; font-weight: 600;
+                letter-spacing: 7.5px; text-transform: uppercase;
+                text-align: center; color: #f1f1f1;
+                padding-left: 50px; margin: 0;
+            }
+            p a { color: #f1f1f1; text-decoration: none; }
+            p a:hover { color: grey; text-decoration: underline; }
+            #particles-js {
+                position: absolute; width: 100%; height: 100%;
+                background-color: #0e0e0e;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="particles-js"></div>
+        <div class="container">
+            <div class="text">
+                <h1 style="text-shadow:-2px 0 0 rgba(255,0,0,.7),2px 0 0 rgba(0,255,255,.7);">{{ title }}</h1>
+                {{ message }}
+                <p><a href="javascript:window.location=window.location.origin">{{ return }}</a></p>
+            </div>
+            <script src="https://cdn.jsdelivr.net/npm/particles.js@2.0.0/particles.min.js"></script>
+            <script>
+                particlesJS("particles-js", {
+                    particles: {
+                        number: { value: 80, density: { enable: true, value_area: 800 } },
+                        color: { value: "#ffffff" },
+                        shape: { type: "circle" },
+                        opacity: { value: 0.5 },
+                        size: { value: 3, random: true },
+                        line_linked: { enable: true, distance: 150, color: "#ffffff", opacity: 0.4, width: 1 },
+                        move: { enable: true, speed: 6, direction: "none", out_mode: "out" }
+                    },
+                    interactivity: {
+                        detect_on: "canvas",
+                        events: {
+                            onhover: { enable: true, mode: "grab" },
+                            onclick: { enable: true, mode: "push" },
+                            resize: true
+                        },
+                        modes: {
+                            grab: { distance: 140, line_linked: { opacity: 1 } },
+                            push: { particles_nb: 4 }
+                        }
+                    },
+                    retina_detect: true
+                });
+            </script>
+        </div>
+    </body>
+</html>

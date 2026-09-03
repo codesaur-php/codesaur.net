@@ -1,0 +1,131 @@
+<!-- Variables: t, lang, package, packages, index -->
+
+<div class="tc-window tc-window-scroll">
+    <span class="tc-window-close">[<span>&#9632;</span>]</span>
+    <span class="tc-window-title">{{ package['name'] }}</span>
+    <span class="tc-window-num">1=[<span>&#8597;</span>]</span>
+    <div class="d-flex align-items-start gap-3">
+        <div class="tc-icon" style="font-size:2.6rem;color:var(--leaf-2);line-height:1"><i class="bi {{ package['icon'] }}"></i></div>
+        <div class="flex-grow-1">
+            <div class="tc-cyan small">{{ package['name'] }}{% if package['version'] is not empty %} &middot; {{ package['version'] }}{% endif %}</div>
+            <h1 class="h2 mb-2">{{ package['title'] }}<span class="tc-cursor"></span></h1>
+            <p class="tc-lead mb-3">{{ package['summary'][lang] }}</p>
+            <div class="tc-badges mb-3">
+                <img src="https://img.shields.io/packagist/v/{{ package['name'] }}?style=flat-square&color=00A651&label=packagist" alt="Packagist version">
+                <img src="https://img.shields.io/packagist/dt/{{ package['name'] }}?style=flat-square&color=39B54A" alt="Downloads">
+                <img src="https://img.shields.io/badge/php-%5E8.2.1-0000AA?style=flat-square&logo=php" alt="PHP version">
+                <img src="https://img.shields.io/badge/license-MIT-8DC63F?style=flat-square" alt="License">
+                {% for psr in package['psr'] %}<img src="https://img.shields.io/badge/{{ psr }}-compliant-00AAAA?style=flat-square" alt="{{ psr }}">{% endfor %}
+            </div>
+            <div class="tc-dialog-actions">
+                <a class="tc-btn" href="{{ 'docs-doc'|link({'key': package['key'], 'doc': 'guide'}) }}">{{ t['doc_guide'] }}</a>
+                <a class="tc-btn tc-btn-alt" href="{{ 'docs-doc'|link({'key': package['key'], 'doc': 'api'}) }}">{{ t['doc_api'] }}</a>
+                <a class="tc-btn tc-btn-gray" href="{{ package['github'] }}" target="_blank" rel="noopener">GitHub</a>
+                <a class="tc-btn tc-btn-gray" href="{{ package['packagist'] }}" target="_blank" rel="noopener">Packagist</a>
+            </div>
+        </div>
+    </div>
+    <span class="tc-window-foot"><b>1:1</b> &#9552;&#9552; {{ package['install'] }}</span>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="tc-dialog mt-0">
+            <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+            <span class="tc-dialog-title">{{ package['title'] }}</span>
+            <p>{{ package['description'][lang] }}</p>
+
+            <div class="tc-group">
+                <span class="tc-group-label">{{ t['package_features'] }}</span>
+                <ul class="tc-checklist mb-0">
+                    {% for feature in package['features'][lang] %}<li>{{ feature }}</li>{% endfor %}
+                </ul>
+            </div>
+
+            <div class="tc-dialog-section">
+                <h2>{{ t['package_classes'] }}</h2>
+                <div class="table-responsive">
+                    <table>
+                        <thead><tr><th>{{ t['package_class'] }}</th><th>{{ t['package_purpose'] }}</th></tr></thead>
+                        <tbody>
+                            {% for cls in package['classes'] %}
+                                <tr><td><code>{{ cls[0] }}</code></td><td>{{ cls[1][lang] }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="tc-dialog-section">
+                <h2>{{ t['package_example'] }}</h2>
+                <pre><code class="language-php">{{ package['example']|e }}</code></pre>
+            </div>
+
+            <div class="tc-dialog-section">
+                <h2>{{ t['package_tests'] }}</h2>
+                <pre><code class="language-bash">composer test</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="tc-dialog mt-0">
+            <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+            <span class="tc-dialog-title">Info</span>
+
+            <div class="tc-group">
+                <span class="tc-group-label">{{ t['package_install'] }}</span>
+                <pre class="mb-0"><code class="language-bash">{{ package['install'] }}</code></pre>
+            </div>
+
+            <div class="tc-group">
+                <span class="tc-group-label">{{ t['package_requires'] }}</span>
+                <ul class="tc-checklist mb-0">
+                    {% for req in package['requires'] %}<li>{{ req }}</li>{% endfor %}
+                </ul>
+            </div>
+
+            {% if package['depends'] is not empty %}
+            <div class="tc-group">
+                <span class="tc-group-label">{{ t['package_depends'] }}</span>
+                <ul class="tc-radiolist mb-0">
+                    {% for dep, constraint in package['depends'] %}
+                        <li class="active">
+                            {% if packages[dep] is defined %}<a href="{{ 'package'|link({'key': dep}) }}">codesaur/{{ dep }}</a>{% else %}codesaur/{{ dep }}{% endif %}
+                            <span class="small">{{ constraint }}</span>
+                        </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="tc-group">
+                <span class="tc-group-label">{{ t['package_docs'] }}</span>
+                <ul class="tc-list mb-0">
+                    {% for slug, doc in package['docs'] %}
+                        <li><a href="{{ 'docs-doc'|link({'key': package['key'], 'doc': slug}) }}">{{ doc['title'] }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            <div class="tc-group">
+                <span class="tc-group-label">{{ t['package_links'] }}</span>
+                <ul class="tc-checklist mb-0">
+                    <li><a href="{{ package['github'] }}" target="_blank" rel="noopener">GitHub</a></li>
+                    <li><a href="{{ package['packagist'] }}" target="_blank" rel="noopener">Packagist</a></li>
+                    <li><a href="{{ package['github'] }}/issues" target="_blank" rel="noopener">Issues</a></li>
+                    {% if package['key'] != 'raptor' %}<li>{{ t['package_used_by'] }} &middot; {{ t['package_standalone'] }}</li>{% endif %}
+                </ul>
+            </div>
+
+            <div class="tc-group mb-0">
+                <span class="tc-group-label">{{ t['package_other'] }}</span>
+                <ul class="tc-list mb-0">
+                    {% for key, pkg in packages %}
+                        <li class="{{ key == package['key'] ? 'active' : '' }}"><a href="{{ 'package'|link({'key': key}) }}">{{ pkg['name'] }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

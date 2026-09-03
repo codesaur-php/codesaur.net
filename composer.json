@@ -1,0 +1,97 @@
+{
+    "name": "codesaur/codesaur.net",
+    "extra": {
+        "version": "1.0.0",
+        "modified": "2026-09-03 17:05"
+    },
+    "type": "project",
+    "description": "codesaur.net - codesaur экосистемийн (Raptor framework болон багцууд) албан ёсны портал",
+    "keywords": [
+        "raptor", "framework", "фреймворк", "application", "http application", "router", "server request handler", "psr-3", "psr-7", "psr-14", "psr-15", "psr-16", "rbac", "role based access control", "multi-tenant", "хэрэглэгчийн эрхийн зохицуулалт", "logger", "протокол", "trash", "хогийн сав", "cache", "кэш", "event dispatcher", "mailer", "smtp", "и-мэйл", "mongol", "mongolia", "монгол", "codesaur", "narankhuu", "coden", "кодзавр", "наранхүү", "коден"
+    ],
+    "homepage": "https://codesaur.net",
+    "authors": [
+        {
+            "name": "Narankhuu",
+            "email": "codesaur@gmail.com",
+            "homepage": "https://github.com/codesaur"
+        }
+    ],
+    "require-dev": {
+        "phpunit/phpunit": "^11.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "ext-gd": "*",
+        "ext-intl": "*",
+        
+        "psr/log": "^3.0.2",
+        "psr/simple-cache": "^3.0",
+        "psr/event-dispatcher": "^1.0",
+        "vlucas/phpdotenv": "^5.6.2",
+        "firebase/php-jwt": "^7.0.2",
+
+        "codesaur/http-message": "^3.0.4",
+        "codesaur/http-application": "^7.0.1",
+        "codesaur/dataobject": "^10.1.1",
+        "codesaur/http-client": "^2.1.2",
+        "codesaur/template": "^4.1.1",
+        "codesaur/container": "^3.2.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Web\\": "application/web/",
+            "Web\\Content\\": "application/web/content/",
+            "Web\\Shop\\": "application/web/shop/",
+            "Web\\Service\\": "application/web/service/",
+            "Web\\Template\\": "application/web/template/",
+            "Web\\Portal\\": "application/web/portal/",
+
+            "Dashboard\\": "application/dashboard/",
+            "Dashboard\\Home\\": "application/dashboard/home",
+            "Dashboard\\Shop\\": "application/dashboard/shop",
+            "Dashboard\\Manual\\": "application/dashboard/manual",
+            "Dashboard\\File\\": "application/dashboard/file",
+            "Dashboard\\Badge\\": "application/dashboard/badge",
+            "Dashboard\\Development\\": "application/dashboard/development",
+            "Dashboard\\Exception\\": "application/dashboard/exception/",
+            "Dashboard\\Template\\": "application/dashboard/template/",
+            "Dashboard\\Authentication\\": "application/dashboard/authentication/",
+            "Dashboard\\User\\": "application/dashboard/user/",
+            "Dashboard\\Organization\\": "application/dashboard/organization/",
+            "Dashboard\\RBAC\\": "application/dashboard/rbac/",
+            "Dashboard\\Localization\\": [
+                "application/dashboard/localization/",
+                "application/dashboard/localization/language",
+                "application/dashboard/localization/text"
+            ],
+            "Dashboard\\Content\\": [
+                "application/dashboard/content/",
+                "application/dashboard/content/settings",
+                "application/dashboard/content/reference",
+                "application/dashboard/content/news",
+                "application/dashboard/content/page",
+                "application/dashboard/content/messages"
+            ],
+            "Dashboard\\Notification\\": "application/dashboard/notification/",
+            "Dashboard\\Mail\\": "application/dashboard/mail/",
+            "Dashboard\\Log\\": "application/dashboard/log/",
+            "Dashboard\\Migration\\": "application/dashboard/migration/",
+            "Dashboard\\Trash\\": "application/dashboard/trash/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "test:unit": "phpunit --testsuite Unit",
+        "test:integration": "phpunit --testsuite Integration",
+        "setup-env": "@php bin/setup-env.php",
+        "post-root-package-install": "@setup-env",
+        "post-install-cmd": "@setup-env",
+        "post-update-cmd": "@setup-env"
+    },
+    "license": "MIT"
+}

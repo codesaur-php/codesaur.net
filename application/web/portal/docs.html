@@ -1,0 +1,27 @@
+<!-- Variables: t, lang, packages -->
+
+<h1 class="tc-section-title mt-0">{{ t['docs_title'] }}</h1>
+<p class="tc-section-lead">{{ t['docs_lead'] }}</p>
+
+<div class="row g-4">
+    {% for key, pkg in packages %}
+        <div class="col-md-6 col-lg-4">
+            <div class="tc-dialog mt-0 h-100 mb-0">
+                <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+                <span class="tc-dialog-title">{{ pkg['title'] }}</span>
+                <div class="d-flex align-items-center mb-2">
+                    <span class="tc-feature-icon me-3"><i class="bi {{ pkg['icon'] }}"></i></span>
+                    <div>
+                        <div class="fw-bold"><a href="{{ 'package'|link({'key': key}) }}">{{ pkg['name'] }}</a></div>
+                        {% if pkg['version'] is not empty %}<div class="small">{{ pkg['version'] }}</div>{% endif %}
+                    </div>
+                </div>
+                <ul class="tc-list mb-0">
+                    {% for slug, doc in pkg['docs'] %}
+                        <li><a href="{{ 'docs-doc'|link({'key': key, 'doc': slug}) }}">{{ doc['title'] }}{% if doc['fallback'] %} <span class="small">(en)</span>{% endif %}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% endfor %}
+</div>

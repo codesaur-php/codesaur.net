@@ -1,0 +1,48 @@
+# Public файлууд - бүх файлыг ignore хийнэ, зөвхөн .htaccess үлдээнэ
+/public_html/public/*
+!/public_html/public/.htaccess
+
+# Runtime хавтаснууд (cache/, logs/, protected/) өөр өөрийн .gitignore-той -
+# хавтас бүр guard файлуудаа (.gitignore, .htaccess) git-д үлдээж,
+# доторх runtime агуулгаа бүхэлд нь ignore хийдэг нэг ижил загвартай.
+
+# Composer vendor - автоматаар татагддаг тул оруулахгүй
+/vendor/
+
+# composer.lock-г git-д ОРУУЛНА (ignore хийхгүй).
+# Production deploy дээр lock файл commit хийгдсэн байх ёстой: тэгснээр
+# серверийн `composer install` нь caret (^) constraint-аар шинэ хувилбар
+# resolve хийлгүй, ЯГ энд pin хийгдсэн codesaur/* хувилбаруудыг суулгана.
+# Портал баримт нь vendor/codesaur/*/docs-оос рендерлэгддэг тул lock нь
+# сайтад харагдах баримтын хувилбарыг ч мөн тогтооно.
+
+# Auto-deploy log-ууд (deploy.ps1 + webhook deploy-hook.php хоёулаа бичдэг)
+/scripts/deploy.log
+/scripts/deploy-hook.log
+
+# Environment variables - серверийн нууц тохиргоо (DB нууц үг, API key, JWT secret гэх мэт)
+# Энэ файлд системийн нэвтрэх эрх, нууц түлхүүрүүд агуулагддаг тул git-д оруулж болохгүй.
+.env
+*.env.bak
+.env.*.bak
+
+# PHPUnit cache
+.phpunit.cache/
+
+# NetBeans private тохиргоо
+/nbproject/private/
+
+# Database файлууд - per-environment (file-based migration system).
+# Зөвхөн .htaccess, migrations/.gitkeep ба migrations/README.md git-д үлдэнэ;
+# migration SQL файлууд server-ээс upload хийгдэнэ.
+/database/*
+!/database/.htaccess
+!/database/migrations/
+/database/migrations/*
+!/database/migrations/.gitkeep
+!/database/migrations/README.md
+
+# PHP error_log - сервер дээр PHP ажиллахад (ж: tidy.so missing warning)
+# үүсдэг. Git clone-ийн working tree-г бохирлож, cPanel deploy-г
+# "uncommitted changes"-ээр блокдог тул ignore хийнэ.
+error_log

@@ -1,0 +1,33 @@
+<!--
+    Home.HTML
+    ------------------------------------------------------------------
+    Dashboard-ийн нүүр хуудас - мэндчилгээ + статистик.
+
+    Controller: Dashboard\Home\HomeController
+    Статистик ui: web-stats.HTML
+-->
+<div id="hello" class="mb-3"></div>
+
+<script>
+    /** Хэрэглэгчийг мэндчилж, өнөөдрийн огноог харуулах. */
+    (function() {
+        var locale = '{{ attribute(localization.language, localization.code).locale ?? "" }}' || 'en-US';
+        var mn = locale.substring(0, 2) === 'mn';
+        var h = new Date().getHours();
+        var g = h > 17 ? (mn ? 'Оройн мэнд' : 'Good evening') : (h > 11 ? (mn ? 'Өдрийн мэнд' : 'Good afternoon') : (mn ? 'Өглөөний мэнд' : 'Good morning'));
+        var now = new Date();
+        var today;
+        if (mn) {
+            var weeks = ['Ням','Даваа','Мягмар','Лхагва','Пүрэв','Баасан','Бямба'];
+            var months = ['1-р сар','2-р сар','3-р сар','4-р сар','5-р сар','6-р сар','7-р сар','8-р сар','9-р сар','10-р сар','11-р сар','12-р сар'];
+            today = now.getFullYear() + ' оны ' + months[now.getMonth()] + 'ын ' + now.getDate() + ', ' + weeks[now.getDay()];
+        } else {
+            today = now.toLocaleDateString(locale, {year:'numeric',month:'long',day:'numeric',weekday:'long'});
+        }
+        document.getElementById('hello').innerHTML =
+            '<h4>' + g + ', <strong>{{ user.profile["first_name"] }}</strong></h4>' +
+            '<span class="text-muted">' + today + '</span>';
+    })();
+</script>
+
+{{ web_log_stats }}

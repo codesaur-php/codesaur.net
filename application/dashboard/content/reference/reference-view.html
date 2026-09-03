@@ -1,0 +1,109 @@
+<!-- Лавлах мэдээллийн дэлгэрэнгүй харах үндсэн карт -->
+<div class="card shadow border-info">
+    <div class="card-header text-uppercase">
+        <!-- Гарчиг + Буцах товч -->
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap">
+            <h3 class="text-info fs-6 pt-1">
+                <i class="bi bi-eye"></i> {{ 'view-record'|text }} ({{ table }}:{{ record['id'] }})
+            </h3>
+            <div class="ms-auto">
+                <a class="btn btn-sm btn-info shadow-sm" href="{{ 'references'|link }}">
+                    <i class="bi bi-arrow-left-circle"></i> {{ 'reference-tables'|text }}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <!-- Түлхүүр ба төрөл (ангилал) -->
+        <div class="row form-group">
+            <div class="col-6">
+                <label class="form-label">{{ 'keyword'|text }}</label>
+                <input class="form-control" name="keyword" value="{{ record['keyword']|e }}" maxlength="128" readonly type="text">
+            </div>
+            <div class="col-6">
+                <label class="form-label">{{ 'type'|text }}</label>
+                <input class="form-control" name="category" value="{{ record['category']|e }}" maxlength="32" readonly type="text">
+            </div>
+        </div>
+
+        <!-- Хэл тус бүрийн табууд -->
+        <ul class="nav nav-tabs nav-tabs-content mt-3">
+            {% for code in localization.language|keys %}
+            <li class="nav-item">
+                <a class="nav-link{% if loop.first %} active show{% endif %}"
+                   data-bs-toggle="tab"
+                   href="#tab-{{ code }}">
+                    {{ 'version'|text }}
+                    <!-- Хэлний туг -->
+                    {% set flag = code == 'en' ? 'us' : code %}
+                    <img src="https://flagcdn.com/20x15/{{ flag }}.png"
+                         srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x"
+                         width="16"
+                         height="12">
+                </a>
+            </li>
+            {% endfor %}
+        </ul>
+
+        <!-- Хэл тус бүрийн контент -->
+        <div class="tab-content">
+            {% for code in localization.language|keys %}
+            <div class="tab-pane{% if loop.first %} active show{% endif %}" id="tab-{{ code }}">
+                <!-- Гарчиг -->
+                <div class="form-group mt-3">
+                    <label class="form-label">{{ 'title'|text }} ({{ code }})</label>
+                    <input class="form-control"
+                           name="title[{{ code }}]"
+                           value="{{ record['localized'][code]['title']|e }}"
+                           readonly
+                           maxlength="255"
+                           type="text">
+                </div>
+                <!-- Контент -->
+                <div class="form-group mt-3">
+                    <label class="form-label">{{ 'content'|text }} ({{ code }})</label>
+                    <textarea class="form-control"
+                              name="full[{{ code }}]"
+                              readonly
+                              rows="10">{{ record['localized'][code]['content']|e }}</textarea>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Доорх энгийн буцах товч -->
+    <div class="card-footer text-uppercase">
+        <div class="row pb-1">
+            <div class="col-12 d-grid">
+                <a class="btn btn-info shadow-sm" href="{{ 'references'|link }}">
+                    <i class="bi bi-arrow-left"></i> {{ 'reference-tables'|text }}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Лог харах хэсэг (зөвшөөрөлтэй хэрэглэгчидэд) -->
+{% if user.can('system_logger') %}
+<div class="mt-5">
+    <hr>
+    <label class="form-label fw-bolder">
+        {{ 'log'|text }} <i class="bi bi-clock-history"></i>
+    </label>
+
+    <!-- Ачаалж буй spinner -->
+    <div class="spinner-grow mt-3" role="status" style="display:none">
+        <span class="visually-hidden">Loading logs...</span>
+    </div>
+
+    <!-- Лог жагсаалт -->
+    <ul class="list-group logger-protocol" id="logger-content"
+        data-retrieve="{{ 'logs-retrieve'|link }}"
+        data-view="{{ 'logs-view'|link }}"
+        data-context='{"action":"reference-*","record_id":"{{ record['id'] }}"}'
+        style="max-height:240px; overflow-y:auto">
+    </ul>
+</div>
+{% endif %}

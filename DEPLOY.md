@@ -91,9 +91,16 @@ FLUSH PRIVILEGES;
                                         DocumentRoot: C:/xampp/htdocs/codesaur.net/public_html
 ```
 
-`codesaur.net` болон `www.codesaur.net`-ийн DNS нь **proxy руу (`.192`)** заадаг бөгөөд
-энэ сервер рүү (`.190`) шууд хандахгүй. Сертификат proxy дээр байх тул энэ серверийн
-Apache-д SSL vhost ХЭРЭГГҮЙ - зөвхөн :80 vhost байна:
+`codesaur.net`-ийн DNS нь **proxy руу (`.192`)** заадаг бөгөөд энэ сервер рүү (`.190`)
+шууд хандахгүй. Сертификат proxy дээр байх тул энэ серверийн Apache-д SSL vhost
+ХЭРЭГГҮЙ - зөвхөн :80 vhost байна:
+
+**`www` дэд домэйн байхгүй.** Proxy нь `www.codesaur.net`-д өөр сайтын агуулга ба
+`*.gerege.mn` сертификат буцаадаг байсан тул www-гийн A бичлэгийг DNS-ээс (Namecheap
+BasicDNS) устгасан. Vhost дахь `ServerAlias www.codesaur.net` болон `.htaccess`-ийн
+www -> apex redirect нь хоосон зогсож байгаа ч аюулгүйн тор болж үлдсэн: www-г хожим
+DNS-д буцааж нэмвэл хүсэлт default vhost (өөр сайт) руу унахгүй, apex руу 301-ээр
+очно. Тиймээс тэднийг устгах шаардлагагүй.
 
 `C:\xampp\apache\conf\extra\httpd-vhosts.conf`:
 

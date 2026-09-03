@@ -203,7 +203,7 @@ use codesaur\Http\Message\Response;
 $request = (new ServerRequest())->initFromGlobal();
 
 // Query params
-var_dump($request->getQueryParams());
+$query = $request->getQueryParams();
 
 // PSR-7 headers унших / Read PSR-7 headers
 $contentType = $request->getHeaderLine('Content-Type');

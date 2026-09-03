@@ -72,6 +72,19 @@ if (-not $php) { Log "ERROR: php олдсонгүй (C:\xampp\php\php.exe)."; ex
 # (config файлаас хамаарахгүй, баталгаатай).
 $gitSafe = @('-c', 'safe.directory=*')
 
+# Итгэмжлэл асуухыг ХОРИГЛОНО. Webhook нь SYSTEM-ээр, дэлгэцгүй ажилладаг тул
+# credential prompt гарвал хариулах хүн байхгүй бөгөөд git үүрд өлгөөтэй үлдэнэ.
+# Өлгөөтэй үлдсэн git процесс нь repo-гийн pack файлыг memory-map хийж барьдаг
+# тул хавтас нь устгах ч, шинэчлэх ч боломжгүй болно. Токен хүчингүй болбол
+# шууд алдаа өгч, лог руу бичээд гарах ёстой.
+#
+# Critical (English): the webhook runs as SYSTEM with no desktop, so a credential
+# prompt hangs git forever instead of failing. Both switches must stay together -
+# GIT_TERMINAL_PROMPT stops git's own prompt, credential.interactive stops the
+# Git Credential Manager GUI. Never remove one without the other.
+$env:GIT_TERMINAL_PROMPT = '0'
+$gitSafe += @('-c', 'credential.interactive=false')
+
 # --- өөрчлөлт шалгах ---------------------------------------------------
 & $git @gitSafe fetch origin --quiet 2>$null
 $local  = (& $git @gitSafe rev-parse HEAD 2>$null)

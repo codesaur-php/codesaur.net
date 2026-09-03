@@ -1,8 +1,8 @@
 {
     "name": "codesaur/codesaur.net",
     "extra": {
-        "version": "1.0.1",
-        "modified": "2026-09-03 17:20"
+        "version": "1.0.2",
+        "modified": "2026-09-03 18:15"
     },
     "type": "project",
     "description": "codesaur.net - codesaur экосистемийн (Raptor framework болон багцууд) албан ёсны портал",

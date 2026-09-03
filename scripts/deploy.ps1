@@ -1,4 +1,4 @@
-# ======================================================================
+﻿# ======================================================================
 # deploy.ps1 - Windows (XAMPP + Apache) auto-deploy via git pull
 # ======================================================================
 #
@@ -17,6 +17,20 @@
 param([switch]$Force)
 
 $ErrorActionPreference = 'Stop'
+
+# Кирилл лог уншигдахуйц байх хоёр нөхцөл:
+#   1. ЭНЭ ФАЙЛ UTF-8 BOM-той хадгалагдсан байх ёстой. Windows PowerShell 5.1
+#      нь BOM-гүй .ps1-ийг ANSI (cp1252) гэж уншдаг тул монгол мөрүүд аль хэдийн
+#      санах ойд эвдэрч, логт давхар кодлогдож бичигддэг.
+#   2. Console гаралтыг UTF-8 болгоно - webhook (deploy-hook.php) нь энэ
+#      скриптийн console гаралтыг exec()-ээр барьж deploy-hook.log руу бичдэг тул
+#      кодчилол таарахгүй бол тэр лог уншигдахгүй болно.
+#
+# Critical (English): keep this file saved as UTF-8 WITH BOM - PowerShell 5.1
+# reads a BOM-less .ps1 as ANSI and mangles every Cyrillic literal before it
+# ever reaches the log. The console encoding line below keeps the output that
+# deploy-hook.php captures readable. Both are needed; neither alone is enough.
+try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 

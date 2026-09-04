@@ -54,10 +54,15 @@ class LoginController extends \Dashboard\Controller
      *           хэрэглэгчийн нууц үг тааруулах UI-г харуулна.
      *
      *  2) Хэрэв хэрэглэгч аль хэдийн нэвтэрсэн бол:
-     *         -> 'home' route руу redirect хийнэ.
+     *         -> "redirect" параметрт заасан dashboard хуудас руу, байхгүй
+     *           бол 'home' route руу redirect хийнэ.
      *
      *  3) Эс бөгөөс:
      *         -> Login template-г (login.html) ачаалж рендерлэнэ.
+     *           "redirect" параметр (JWTAuthMiddleware нэвтрээгүй хэрэглэгчийг
+     *           login руу илгээхдээ анх орох гэсэн замыг нь өгдөг) шүүгдээд
+     *           template-ийн redirect_url болж, амжилттай нэвтэрсний дараа
+     *           JS тэр хуудас руу шилжүүлнэ.
      *
      * Template-т дамжуулах өгөгдөл:
      *   - settings middleware-ээр inject хийгдсэн бүх системийн тохиргоо
@@ -88,9 +93,9 @@ class LoginController extends \Dashboard\Controller
 
         // 2) Хэрэглэгч аль хэдийн нэвтэрсэн бол
         if ($this->isUserAuthorized()) {
-            $return = $this->resolveReturnPath();
-            if ($return !== '') {
-                \header('Location: ' . \filter_var($return, \FILTER_SANITIZE_URL), true, 302);
+            $target = $this->getLoginRedirectTarget();
+            if ($target !== null) {
+                \header("Location: $target", true, 302);
                 exit;
             }
             return $this->redirectTo('home');
@@ -100,54 +105,62 @@ class LoginController extends \Dashboard\Controller
     }
 
     /**
-     * Нэвтэрсний дараа буцаж очих замыг query-ээс уншиж баталгаажуулах.
+     * ?redirect=... параметрээс нэвтэрсний дараа очих замыг шүүж авна.
      *
-     * `JWTAuthMiddleware` нь нэвтрээгүй хэрэглэгчийг login руу явуулахдаа
-     * очих гэсэн замыг `?return=/dashboard/news` хэлбэрээр дамжуулдаг.
-     * Энэ метод түүнийг шалгаж, browser-т өгөх бүтэн зам болгож буцаана.
-     *
-     * Зөвхөн энэ dashboard-ын дотоод зам зөвшөөрөгдөнө:
-     *   - '/'-ээр эхэлнэ, гэхдээ '//' биш (protocol-relative нь өөр домэйн)
-     *   - mount path-аар ('/dashboard/') эхэлнэ
-     *   - login хуудас өөрөө биш (redirect гогцоо үүсгэхээс сэргийлнэ)
-     *   - хяналтын тэмдэгтгүй, 512 тэмдэгтээс богино
-     *
-     * Critical (English): never redirect to this value without the whitelist
-     * above. It arrives from the query string, so anything looser turns the
-     * login page into an open redirect and a phishing vector.
-     *
-     * @return string Browser-т өгөх бүтэн зам, эсвэл '' (буцах зам байхгүй)
+     * @return string|null Аюулгүй dashboard доторх зам, эсвэл null
      */
-    private function resolveReturnPath(): string
+    private function getLoginRedirectTarget(): ?string
     {
-        $return = $this->getQueryParams()['return'] ?? '';
-        if (!\is_string($return) || $return === '' || \strlen($return) > 512) {
-            return '';
+        return self::sanitizeRedirectTarget(
+            $this->getQueryParams()['redirect'] ?? null,
+            $this->getScriptPath() . $this->getMountPath()
+        );
+    }
+
+    /**
+     * Нэвтэрсний дараа очих замыг open redirect-ээс хамгаалж шүүнэ.
+     *
+     * Зөвхөн дараах нөхцөлийг бүгдийг хангасан утгыг хүлээн авна:
+     *   - Хоосон биш string, '/'-ээр эхэлсэн харьцангуй зам
+     *     ('//evil.com', '/\evil.com' гэх мэт protocol-relative хэлбэр биш)
+     *   - Control тэмдэгт (CR/LF - header injection) болон backslash агуулаагүй
+     *   - Dashboard-ын mount зам ($dashboardBase, жишээ нь '/dashboard') доор
+     *     байрлана - гадны сайт, public web зам руу хэзээ ч шилжүүлэхгүй
+     *   - Login хуудас өөрөө биш (redirect давталт үүсгэхгүй)
+     *
+     * Security (English): the redirect target must be a same-origin path under
+     * the dashboard mount. Anything else (absolute URL, protocol-relative
+     * '//host', backslash tricks, CR/LF, a login page) returns null and the
+     * caller falls back to the 'home' route.
+     *
+     * @param mixed  $target        Query параметрийн түүхий утга
+     * @param string $dashboardBase Script path + mount path (жишээ нь '/dashboard')
+     * @return string|null
+     */
+    public static function sanitizeRedirectTarget(mixed $target, string $dashboardBase): ?string
+    {
+        if (!\is_string($target) || $target === '' || $target[0] !== '/') {
+            return null;
+        }
+        if (\str_starts_with($target, '//')
+            || \preg_match('/[\x00-\x1F\x7F\\\\]/', $target) === 1
+        ) {
+            return null;
         }
 
-        // Хяналтын тэмдэгт (header injection, гажуудсан зам)
-        if (\preg_match('/[\x00-\x1F\x7F]/', $return)) {
-            return '';
+        $base = \rtrim($dashboardBase, '/');
+        if ($base !== ''
+            && $target !== $base
+            && !\str_starts_with($target, "$base/")
+            && !\str_starts_with($target, "$base?")
+        ) {
+            return null;
+        }
+        if (\str_starts_with($target, "$base/login")) {
+            return null;
         }
 
-        // Backslash-ыг зарим browser '/'-тэй адил тайлдаг тул урьдчилан хөрвүүлж
-        // шалгана: '/\evil.com' нь '//evil.com' болж илэрнэ.
-        $return = \str_replace('\\', '/', $return);
-        if (!\str_starts_with($return, '/') || \str_starts_with($return, '//')) {
-            return '';
-        }
-
-        $mount = $this->getMountPath();
-        if ($mount === '' || !\str_starts_with($return, "$mount/")) {
-            return '';
-        }
-
-        $path = \explode('?', $return)[0];
-        if ($path === "$mount/login" || \str_starts_with($path, "$mount/login/")) {
-            return '';
-        }
-
-        return $this->getScriptPath() . $return;
+        return $target;
     }
 
     /**
@@ -170,15 +183,15 @@ class LoginController extends \Dashboard\Controller
             $login->set('flash_alert', $flash);
         }
 
-        // Нэвтэрсний дараа буцаж очих зам (JWTAuthMiddleware-ийн ?return=).
-        // Хүчингүй эсвэл байхгүй бол '' - login.html энэ үед home руу явуулна.
-        $login->set('return_url', $this->resolveReturnPath());
-
         // Spam хамгаалалтын timestamp + token (SpamProtectionTrait-ийн нэгдсэн логик)
         $ts = \time();
         $login->set('spam_ts', $ts);
         $login->set('spam_token', $this->generateSpamToken('login-form', $ts));
         $login->set('turnstile_site_key', $this->getTurnstileSiteKey());
+
+        // Нэвтэрсний дараа очих зам (?redirect=...) - шүүгдээгүй бол хоосон,
+        // login.html-ийн JS тэр үед 'home' route руу шилжүүлнэ.
+        $login->set('redirect_url', $this->getLoginRedirectTarget() ?? '');
 
         // SettingsMiddleware -> request attributes -> 'settings'
         foreach ($this->getAttribute('settings', []) as $key => $value) {

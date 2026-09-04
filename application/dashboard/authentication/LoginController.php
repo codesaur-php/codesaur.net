@@ -66,8 +66,6 @@ class LoginController extends \Dashboard\Controller
      *
      * Template-т дамжуулах өгөгдөл:
      *   - settings middleware-ээр inject хийгдсэн бүх системийн тохиргоо
-     *   - "tos" (Terms of Service) болон "pp" (Privacy Policy)
-     *        орчуулгын контентууд (ReferenceModel -> templates хүснэгтээс)
      *
      * Анхаар:
      *   - LocalizationMiddleware ажиллаагүй бол хэлний орчуулга байхгүй байж болно
@@ -196,13 +194,6 @@ class LoginController extends \Dashboard\Controller
         // SettingsMiddleware -> request attributes -> 'settings'
         foreach ($this->getAttribute('settings', []) as $key => $value) {
             $login->set($key, $value);
-        }
-
-        // TOS + Privacy Policy орчуулга татаж template-д дамжуулах
-        $templateService = $this->getService('template_service');
-        $templates = $templateService->getByKeywords(['tos', 'pp'], $this->getLanguageCode());
-        foreach ($templates as $keyword => $template) {
-            $login->set($keyword, $template);
         }
 
         // Login template-г render хийх

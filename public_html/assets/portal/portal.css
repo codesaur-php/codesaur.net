@@ -138,9 +138,11 @@ body.tc-desktop img {
     text-decoration: none !important;
     font-weight: 700;
 }
-.tc-menubar-brand img {
-    height: 1.7rem;
-    width: auto;
+.tc-menubar-dino {
+    font-size: 1.5rem;
+    line-height: 1;
+    /* Emoji font-ууд Cyrillic-гүй тул menubar-ийн IBM Plex Mono-г дарж бичнэ */
+    font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
 }
 .tc-menubar-brand:hover {
     background: transparent !important;

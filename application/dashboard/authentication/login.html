@@ -69,14 +69,6 @@
                 
                 <hr>
                 
-                <!-- Signup -->
-                <div class="text-center">
-                    <span>{{ 'ask-dont-have-user-yet'|text }}</span>
-                    <a href="javascript:;" id="signup">{{ 'signup'|text }}</a>
-                </div>
-                
-                <hr>
-                
                 <!-- Footer copyright -->
                 <p class="mt-3 mb-3 text-muted text-center">
                     {% if copyright is not empty %}{{ copyright }}{% else %}{{ 'now'|date('Y') }} &copy; {{ 'dashboard'|text }}{% endif %}
@@ -110,50 +102,9 @@
                     <button class="cancel btn btn-secondary shadow-sm float-end" type="button">{{ 'cancel'|text }}</button>
                 </div>
             </form>
-
-            <!-- signup form (#register) -->
-            <form class="d-none" id="register" action="{{ 'signup'|link }}" method="POST">
-                <h3 class="text-center mb-4">{{ 'signup'|text }}</h3>
-                <span>{{ 'enter-personal-details'|text }}</span>
-                <div class="form-floating mt-3 mb-2">
-                    <input class="form-control" type="text" placeholder="{{ 'username'|text|e }}" name="codeUsername" id="codeUsername" autocomplete="new-username">
-                    <label for="codeUsername">{{ 'username'|text }}</label>
-                    <small class="text-warning"><i class="bi bi-exclamation-triangle"></i> {{ 'error-username-cannot-change'|text }}</small>
-                </div>
-                <div class="form-floating mb-2">
-                    <input class="form-control" type="text" placeholder="{{ 'email'|text|e }}" name="codeEmail" id="codeEmail" autocomplete="new-email">
-                    <label for="codeEmail">{{ 'email'|text }}</label>
-                </div>
-                <div class="form-floating mb-2">
-                    <input class="form-control" type="password" placeholder="{{ 'password'|text|e }}" name="codePassword" id="codePassword" autocomplete="new-password">
-                    <label for="codePassword">{{ 'password'|text }}</label>
-                </div>
-                <div class="form-floating mb-3">
-                    <input class="form-control" type="password" placeholder="{{ 'retype-password'|text|e }}" name="codeRePassword" id="codeRePassword" autocomplete="new-password-retype">
-                    <label for="codeRePassword">{{ 'retype-password'|text }}</label>
-                </div>
-                
-                <hr>
-                
-                <!-- Tos + Privacy Policy -->
-                <div class="text-center mb-2">
-                {{ 'signup-agree-prefix'|text }}
-                <a data-bs-toggle="modal" data-bs-target="#tos" href="javascript:;">{{ 'terms-and-conditions'|text }}</a>
-                {{ 'signup-agree-middle'|text }}
-                <a data-bs-toggle="modal" data-bs-target="#pp" href="javascript:;">{{ 'privacy-policy'|text }}</a>.
-                </div>
-                <hr>
-                <div class="mt-2">
-                    {% if turnstile_site_key is not empty %}
-                    <div class="cf-turnstile mb-2" data-sitekey="{{ turnstile_site_key }}"></div>
-                    {% endif %}
-                    <button class="btn btn-primary shadow-sm" id="signup_submit">{{ 'signup'|text }}</button>
-                    <button class="cancel btn btn-secondary shadow-sm" type="button">{{ 'cancel'|text }}</button>
-                </div>
-            </form>
         </main>
         
-        <!-- front-end logic - login / forgot / signup -->
+        <!-- front-end logic - login / forgot -->
         <script type="text/javascript">
             /* Spam хамгаалалтын утгууд */
             const _spam_ts = '{{ spam_ts }}';
@@ -189,14 +140,11 @@
                 /* Form references */
                 const formLogin = document.querySelector('form#login');
                 const formForgot = document.querySelector('form#forgot');
-                const formSignUp = document.querySelector('form#register');
                 
                 /* Button references */
                 const btnLoginSubmit = document.querySelector('button#login_signin_submit');
                 const btnForgotPassword = document.querySelector('a#forgot_password');
                 const btnForgotPasswordSubmit = document.querySelector('button#forgot_password_submit');
-                const btnSignup = document.querySelector('a#signup');
-                const btnSignupSubmit = document.querySelector('button#signup_submit');
 
                 /* ============================================================
                    Helper functions
@@ -249,13 +197,11 @@
 
                 function displaySignIn()
                 {
-                    formSignUp.classList.add('d-none');
                     formForgot.classList.add('d-none');
 
                     formLogin.classList.remove('d-none');
                     formLogin.classList.add('animate__animated', 'animate__flipInX');
                     
-                    removeAlert(formSignUp);
                     removeAlert(formForgot);
                 }
 
@@ -271,21 +217,9 @@
                     e.preventDefault();
                     
                     formLogin.classList.add('d-none');
-                    formSignUp.classList.add('d-none');
 
                     formForgot.classList.remove('d-none');
                     formForgot.classList.add('animate__animated', 'animate__flipInX');
-                });
-                
-                /* Signup Form */
-                btnSignup.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    formLogin.classList.add('d-none');
-                    formForgot.classList.add('d-none');
-
-                    formSignUp.classList.remove('d-none');
-                    formSignUp.classList.add('animate__animated', 'animate__flipInX');
                 });
                 
                 /* Cancel buttons -> Always return to Login form */
@@ -379,107 +313,8 @@
                     });
                 });
                 
-                /* Signup Submit */
-                btnSignupSubmit.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    const username = formSignUp.codeUsername?.value ?? '';
-                    const email = formSignUp.codeEmail?.value ?? '';
-                    const password = formSignUp.codePassword?.value ?? '';
-                    const password_re = formSignUp.codeRePassword?.value ?? '';
-                    if (isBlank(username)) {
-                        return showMessage(formSignUp, 'warning', `{{ 'error-username-empty'|text|e }}`);
-                    } else if (isBlank(email)) {
-                        return showMessage(formSignUp, 'warning', `{{ 'enter-email-empty'|text|e }}`);
-                    } else if (!validateEmail(email)) {
-                        return showMessage(formSignUp, 'warning', `{{ 'enter-valid-email'|text|e }}`);
-                    } else if (isBlank(password)) {
-                        return showMessage(formSignUp, 'warning', `{{ 'error-password-empty'|text|e }}`);
-                    } else if (isBlank(password_re)) {
-                        return showMessage(formSignUp, 'warning', `{{ 'password-must-confirm'|text|e }}`);
-                    } else if (password !== password_re) {
-                        return showMessage(formSignUp, 'warning', `{{ 'password-must-match'|text|e }}`);
-                    }
-                    
-                    spinNstop(this);
-                    fetch(
-                        formSignUp.action,
-                        {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                username, email, password, password_re,
-                                website: document.getElementById('hp_field').value,
-                                _ts: _spam_ts,
-                                _token: _spam_token,
-                                /* Turnstile widget нь form дотор нуугдмал input үүсгэдэг ч
-                                   payload-г гараар угсарч байгаа тул утгыг нь өөрсдөө дамжуулна */
-                                'cf-turnstile-response': formSignUp.elements['cf-turnstile-response']?.value ?? ''
-                            })
-                        }
-                    ).then(parseJSON).then(response => {
-                        if (response.status !== 'success') {
-                            throw new Error(response.message ?? `{{ 'something-went-wrong'|text|e }}`);
-                        }
-                        
-                        displaySignIn();
-                        showMessage(formLogin, 'success', response.message ?? 'Success');
-                        
-                        /* clear inputs */
-                        formSignUp.codeUsername.value = '';
-                        formSignUp.codeEmail.value = '';
-                        formSignUp.codePassword.value = '';
-                        formSignUp.codeRePassword.value = '';
-                    }).catch(error => {
-                        showMessage(formSignUp, 'danger', error.message);
-                    }).finally(() => {
-                        spinNstop(this);
-                        /* Turnstile token нэг удаагийн хэрэглээтэй тул widget-ийг сэргээнэ
-                           (form.reset() нь Turnstile-ийг сэргээдэггүй). */
-                        if (window.turnstile) {
-                            window.turnstile.reset();
-                        }
-                    });
-                });
             });
         </script>
         
-        <!-- tos - Terms of Service Modal -->
-        <div class="modal fade" id="tos" role="dialog" tabindex="-1" aria-hidden="true">
-            <div class="modal-xl modal-dialog modal-dialog-scrollable" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title text-primary text-uppercase">{{ tos['title'] }}</h5>
-                        <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
-                    </div>
-                    <div class="modal-body">
-                        {{ tos['content'] }}
-                    </div>
-                    <div class="modal-footer">
-                         <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal" type="button">{{ 'close'|text }}</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-                    
-        <!-- pp - Privacy Policy Modal -->
-        <div class="modal fade" id="pp" role="dialog" tabindex="-1" aria-hidden="true">
-            <div class="modal-xl modal-dialog modal-dialog-scrollable" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title text-primary text-uppercase">{{ pp['title'] }}</h5>
-                        <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="{{ 'close'|text|e }}"></button>
-                    </div>
-                    <div class="modal-body">
-                        {{ pp['content'] }}
-                    </div>
-                    <div class="modal-footer">
-                         <button class="btn btn-primary shadow-sm" data-bs-dismiss="modal" type="button">{{ 'close'|text }}</button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </body>
 </html>

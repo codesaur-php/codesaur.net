@@ -297,6 +297,7 @@ class Markdown
         $items = [];
         $current = null;
         $contentIndent = 0;
+        $startIndex = $i;
 
         while ($i < $count) {
             $line = $lines[$i];
@@ -326,7 +327,9 @@ class Markdown
 
             $indent = \strlen($line) - \strlen(\ltrim($line));
 
-            if (\preg_match('/^(\s*)([-*+]|\d+[.)])\s+(.*)$/', $line, $lm) && \strlen($lm[1]) < $contentIndent + ($current === null ? 1 : 0)) {
+            if (\preg_match('/^(\s*)([-*+]|\d+[.)])\s+(.*)$/', $line, $lm)
+                && \strlen($lm[1]) < ($current === null ? $baseIndent + 1 : $contentIndent)
+            ) {
                 $itemIndent = \strlen($lm[1]);
                 if ($itemIndent < $baseIndent) {
                     break; // Гадна түвшний жагсаалт
@@ -362,6 +365,18 @@ class Markdown
                 continue;
             }
             break;
+        }
+        // Прогрессийн баталгаа: parseBlocks() нь энэ метод $i-г ядаж нэг мөрөөр
+        // урагшлуулна гэж найдаж давталтаа үргэлжлүүлдэг. Нэг ч мөр залгигдаагүй
+        // бол дуудагч мөн мөрийг дахин энд илгээж, төгсгөлгүй давталт үүсгэн
+        // санах ойг дуустал HTML хуримтлуулна.
+        //
+        // Critical (English): parseList() MUST consume at least one line.
+        // parseBlocks() re-dispatches the very same line otherwise and the page
+        // spins until the memory limit kills the request. Keep this guard.
+        if ($i === $startIndex) {
+            $current = [\preg_replace('/^(\s*)([-*+]|\d+[.)])\s+/', '', $lines[$startIndex])];
+            $i++;
         }
         if ($current !== null) {
             $items[] = $current;

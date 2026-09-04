@@ -139,6 +139,30 @@ class MarkdownTest extends RaptorTestCase
         $this->assertStringContainsString("line one<br>\nline two", $html);
     }
 
+    /**
+     * Доголтой мөрөөр эхэлсэн жагсаалт төгсгөлгүй давталт үүсгэж болохгүй.
+     *
+     * parseBlocks() нь parseList()-ыг дуудаад $i урагшилсан гэж үзэн
+     * давталтаа үргэлжлүүлдэг. parseList() нэг ч мөр залгихгүй буцвал
+     * дуудагч мөн мөрийг дахин илгээж, санах ой дуустал HTML хуримтлуулна
+     * (vendor/codesaur/dataobject-ийн README ингэж /docs/dataobject/guide
+     * хуудсыг унагаж байсан).
+     */
+    public function testIndentedListAfterParagraphDoesNotHang(): void
+    {
+        $markdown = "The project is fully tested:\n"
+            . "\n"
+            . "-**PHPUnit** - Unit and Integration tests\n"
+            . "-**GitHub Actions** - Automated CI/CD pipeline\n"
+            . "  - Automatically runs on Push and Pull Request\n"
+            . "  - Runs on PHP 8.2, 8.3 and 8.4\n";
+
+        $html = (new Markdown())->convert($markdown);
+
+        $this->assertStringContainsString('Automatically runs on Push and Pull Request', $html);
+        $this->assertStringContainsString('Runs on PHP 8.2, 8.3 and 8.4', $html);
+        $this->assertLessThan(4000, \strlen($html), 'Жагсаалтын блок давтагдан хуримтлагдсан байна');
+    }
     public function testRealPackageReadmeConverts(): void
     {
         $file = \dirname(__DIR__, 3) . '/vendor/codesaur/router/README.md';

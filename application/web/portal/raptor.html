@@ -1,4 +1,4 @@
-<!-- Variables: t, lang, raptor, modules, packages, github_org, index -->
+<!-- Variables: t, lang, raptor, modules, packages, github_org, index, aikido_intel, aikido_checked -->
 
 <div class="tc-window tc-window-scroll">
     <span class="tc-window-close">[<span>&#9632;</span>]</span>
@@ -15,6 +15,7 @@
                 <img src="https://img.shields.io/packagist/dt/{{ raptor['name'] }}?style=flat-square&color=39B54A" alt="Downloads">
                 <img src="https://img.shields.io/badge/php-%5E8.2.1-0000AA?style=flat-square&logo=php" alt="PHP version">
                 <img src="https://img.shields.io/badge/license-MIT-8DC63F?style=flat-square" alt="License">
+                {% if raptor['aikido'] is not empty %}<a href="{{ raptor['aikido_link'] }}" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/aikido-{{ raptor['aikido'] }}%2F100-00A651?style=flat-square" alt="Aikido Intel {{ raptor['aikido'] }}/100"></a>{% endif %}
             </div>
             <div class="tc-dialog-actions">
                 <a class="tc-btn" href="{{ 'docs-doc'|link({'key': 'raptor', 'doc': 'guide'}) }}">{{ t['doc_guide'] }}</a>

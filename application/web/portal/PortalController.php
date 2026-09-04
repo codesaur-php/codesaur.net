@@ -33,7 +33,8 @@ class PortalController extends TemplateController
         $code = $this->getLanguageCode();
         $lang = PortalContent::lang($code);
         $t = PortalContent::texts($code);
-        $raptor = PortalContent::package('raptor');
+        $packages = self::withInstalledVersions(PortalContent::packages());
+        $raptor = $packages['raptor'];
 
         $this->webTemplate(__DIR__ . '/raptor.html', [
             'layout' => 'portal',
@@ -43,8 +44,10 @@ class PortalController extends TemplateController
             't' => $t,
             'raptor' => $raptor,
             'modules' => PortalContent::raptorModules($code),
-            'packages' => self::withInstalledVersions(PortalContent::packages()),
+            'packages' => $packages,
             'github_org' => PortalContent::GITHUB_ORG,
+            'aikido_intel' => PortalContent::AIKIDO_INTEL,
+            'aikido_checked' => PortalContent::AIKIDO_CHECKED,
         ])->render();
 
         $this->log('web', LogLevel::NOTICE, '[{server_request.code}] Raptor танилцуулга хуудсыг уншиж байна', ['action' => 'portal-raptor']);

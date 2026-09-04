@@ -72,6 +72,12 @@
                     <li><a href="{{ 'contact'|link }}" data-prefix="{{ 'contact'|link }}"><span class="tc-menu-label">{{ t['nav_contact'] }}</span></a></li>
 
                     <li class="tc-menu-right"><a href="{{ github_org }}" target="_blank" rel="noopener" title="{{ t['nav_github'] }}"><i class="bi bi-github"></i><span class="tc-menu-label d-lg-none ms-2">{{ t['nav_github'] }}</span></a></li>
+                    {% if config['facebook'] is not empty %}
+                        <li><a href="{{ config['facebook'] }}" target="_blank" rel="noopener" title="Facebook"><i class="bi bi-facebook"></i><span class="tc-menu-label d-lg-none ms-2">Facebook</span></a></li>
+                    {% endif %}
+                    {% if config['youtube'] is not empty %}
+                        <li><a href="{{ config['youtube'] }}" target="_blank" rel="noopener" title="YouTube"><i class="bi bi-youtube"></i><span class="tc-menu-label d-lg-none ms-2">YouTube</span></a></li>
+                    {% endif %}
                     {% if localization.language|length > 1 %}
                         {% for code,language in localization.language %}
                             {% set flag = code == 'en' ? 'us' : code %}
@@ -121,12 +127,8 @@
                     {% else %}
                         {% set href = 'page'|link({'slug':item['slug']}) %}
                     {% endif %}
-                    <a href="{{ href }}">{{ item['title']|raw }}</a> &middot;
+                    <a href="{{ href }}">{{ item['title']|raw }}</a>{% if not loop.last %} &middot; {% endif %}
                 {% endfor %}
-                <a href="{{ 'sitemap'|link }}">{{ 'sitemap'|text }}</a> &middot;
-                <a href="{{ 'rss'|link }}">RSS</a>
-                {% if config['facebook'] is not empty %} &middot; <a href="{{ config['facebook'] }}" target="_blank" rel="noopener"><i class="bi bi-facebook"></i></a>{% endif %}
-                {% if config['youtube'] is not empty %} &middot; <a href="{{ config['youtube'] }}" target="_blank" rel="noopener"><i class="bi bi-youtube"></i></a>{% endif %}
             </div>
         </div>
 

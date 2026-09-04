@@ -703,7 +703,7 @@ PHP,
                 'why_6_text' => 'Код, тайлбар, баримт бүгд монгол болон англи хэл дээр. Олон хэлний контент удирдлага анхнаасаа суурилсан.',
 
                 'arch_title' => 'Архитектур',
-                'arch_lead' => 'Нэг entry point, хоёр апп. Хүсэлт middleware гинжээр дамжин router, controller, template хүртэл явна.',
+                'arch_lead' => 'Нэг entry point, хэдэн ч апп байж болно - default-аар 2 апп. Хүсэлт middleware гинжээр дамжин router, controller, template хүртэл явна.',
                 'arch_flow' => 'Хүсэлтийн урсгал',
 
                 'quick_title' => 'Өгөгдлөө үүсгэнэ',
@@ -817,7 +817,7 @@ PHP,
                 'why_6_text' => 'Code, comments and docs are in Mongolian and English. Multi-language content management is built in from the ground up.',
 
                 'arch_title' => 'Architecture',
-                'arch_lead' => 'One entry point, two apps. A request travels through the middleware chain to the router, controller and template.',
+                'arch_lead' => 'One entry point, as many apps as you need - two by default. A request travels through the middleware chain to the router, controller and template.',
                 'arch_flow' => 'Request flow',
 
                 'quick_title' => 'Quick start',

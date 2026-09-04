@@ -22,7 +22,9 @@
         {% if results|length > 0 %}
             <div class="list-group">
                 {% for item in results %}
-                    {% if item.type == 'product' %}
+                    {% if item.url is not empty %}
+                        {% set href = item.url %}
+                    {% elseif item.type == 'product' %}
                         {% set href = 'product'|link({ slug: item.slug }) %}
                     {% elseif item.type == 'page' %}
                         {% set href = 'page'|link({ slug: item.slug }) %}
@@ -37,7 +39,9 @@
                                     <p class="mb-0 text-muted small">{{ item.description|length > 200 ? item.description|slice(0, 200) ~ '...' : item.description }}</p>
                                 {% endif %}
                             </div>
-                            {% if item.type == 'product' %}
+                            {% if item.type_label is not empty %}
+                                <span class="badge bg-info text-dark ms-2">{{ item.type_label }}</span>
+                            {% elseif item.type == 'product' %}
                                 <span class="badge bg-warning text-dark ms-2">{{ 'product'|text }}</span>
                             {% elseif item.type == 'page' %}
                                 <span class="badge bg-primary ms-2">{{ 'page'|text }}</span>

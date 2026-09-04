@@ -9,6 +9,9 @@ use Dashboard\Content\PagesModel;
 
 use Dashboard\Shop\ProductsModel;
 
+use Web\Portal\PortalContent;
+use Web\Portal\PortalSearch;
+
 use Web\Template\TemplateController;
 
 /**
@@ -16,6 +19,8 @@ use Web\Template\TemplateController;
  *
  * Вэб сайтын хайлтын контроллер.
  * Pages, News, Products хүснэгтүүдээс LIKE хайлт хийж үр дүнг харуулна.
+ * Мөн порталын статик хуудсууд болон багцуудын markdown баримтаас
+ * PortalSearch-ээр хайж, өгөгдлийн сангийн үр дүнгийн ард нэмнэ.
  *
  * @package Web\Service
  */
@@ -32,6 +37,11 @@ class SearchController extends TemplateController
      *  - Products: title, slug, description, content, link
      *
      * Content талбараас img tag алгасаж strip_tags хийсэн текстээр шүүнэ.
+     *
+     * Өгөгдлийн сангийн үр дүнгийн дараа порталын статик хуудсууд
+     * (нүүр, /raptor, /packages, /package/{key}) болон багцуудын
+     * markdown баримтаас олдсоныг нэмнэ - PortalSearch-ийн индекс
+     * кэшлэгддэг тул хүсэлт бүрт файл уншихгүй.
      *
      * @return void
      */
@@ -113,6 +123,9 @@ class SearchController extends TemplateController
         // HTML tag attribute дотроос олдсон буруу match-уудыг шүүх
         $results = $this->filterResults($results, $q);
 
+        // Порталын статик хуудсууд ба баримт бичгээс хайх
+        $results = \array_merge($results, $this->searchPortal($q, $code));
+
         $this->webTemplate(__DIR__ . '/search.html', [
             'q' => $q,
             'results' => $results,
@@ -127,6 +140,45 @@ class SearchController extends TemplateController
         );
     }
 
+    /**
+     * Порталын статик хуудсууд ба баримт бичгээс хайх.
+     *
+     * Индексийг PortalSearch бүтээх бөгөөд PortalContent (PHP массив) болон
+     * багцуудын markdown файлаас л бүтдэг тул кэшлэгдэнэ. Индексийг зөвхөн
+     * deploy цэвэрлэдэг (scripts/deploy.ps1 нь cache/*.cache-г устгадаг) -
+     * контент нь deploy-ээс өөр замаар өөрчлөгддөггүй учраас.
+     *
+     * Coupling (English): this cache entry has no explicit invalidation -
+     * the deploy script wiping cache/*.cache is what refreshes it. Clear the
+     * cache by hand if PortalContent or a docs markdown file is ever edited
+     * on a live server without a deploy.
+     *
+     * @param string $q Хайх үг
+     * @param string $code Хэлний код
+     * @return array<int, array> Хайлтын үр дүнгийн мөрүүд
+     */
+    private function searchPortal(string $q, string $code): array
+    {
+        if (\mb_strlen($q) < 2) {
+            return [];
+        }
+
+        $lang = PortalContent::lang($code);
+        $cache = $this->hasService('cache') ? $this->getService('cache') : null;
+        $index = $cache?->get("portal_search.$lang");
+        if ($index === null) {
+            $index = PortalSearch::index($lang, PortalContent::texts($code));
+            $cache?->set("portal_search.$lang", $index);
+        }
+
+        $results = [];
+        foreach (PortalSearch::search($q, $index) as $row) {
+            $row['url'] = $this->generateRouteLink($row['route'], $row['params']);
+            unset($row['route'], $row['params']);
+            $results[] = $row;
+        }
+        return $results;
+    }
     /**
      * HTML content-ээс img tag алгасаж strip_tags хийсэн текст буцаах.
      */

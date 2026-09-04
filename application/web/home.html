@@ -23,11 +23,12 @@
 
         $this-&gt;use(<span class="k">new</span> <span class="i">Template\ExceptionHandler</span>());
         $this-&gt;use(<span class="k">new</span> <span class="i">SessionMiddleware</span>(
-            <span class="k">fn</span>($path, $method) =&gt; <span class="i">str_starts_with</span>($path, <span class="s">'/session/'</span>)
+            <span class="k">fn</span>($path, $method) =&gt; <span class="i">\str_starts_with</span>($path, <span class="s">'/session/'</span>)
         ));
         $this-&gt;use(<span class="k">new</span> <span class="i">LocalizationMiddleware</span>(<span class="s">'WEB_LANGUAGE_CODE'</span>));
         $this-&gt;use(<span class="k">new</span> <span class="i">WebRouter</span>());
         $this-&gt;use(<span class="k">new</span> <span class="i">Portal\PortalRouter</span>());
+        <span class="tc-cursor"></span>
     }
 }</pre>
         <span class="tc-window-foot"><b>1:1</b> &#9552;&#9552; APPLICATION.PHP</span>

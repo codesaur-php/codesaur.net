@@ -703,7 +703,7 @@ PHP,
                 'why_6_text' => 'Код, тайлбар, баримт бүгд монгол болон англи хэл дээр. Олон хэлний контент удирдлага анхнаасаа суурилсан.',
 
                 'arch_title' => 'Архитектур',
-                'arch_lead' => 'Нэг entry point, хэдэн ч апп байж болно - default-аар 2 апп. Хүсэлт middleware гинжээр дамжин router, controller, template хүртэл явна.',
+                'arch_lead' => 'Нэг entry point, хэдэн ч апп байж болно - анхдагч байдлаар 2 апп. Хүсэлт middleware гинжээр дамжин router, controller, template хүртэл явна.',
                 'arch_flow' => 'Хүсэлтийн урсгал',
 
                 'quick_title' => 'Өгөгдлөө үүсгэнэ',

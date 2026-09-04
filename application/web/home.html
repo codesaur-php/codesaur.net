@@ -11,10 +11,11 @@
 <span class="k">namespace</span> <span class="i">Web</span>;
 
 <span class="k">use</span> <span class="i">Psr\Http\Message\ResponseInterface</span>;
+<span class="k">use</span> <span class="i">codesaur\Http\Application\Application</span> <span class="k">as</span> <span class="i">Base</span>;
 <span class="k">use</span> <span class="i">Dashboard\SessionMiddleware</span>;
 <span class="k">use</span> <span class="i">Dashboard\Localization\LocalizationMiddleware</span>;
 
-<span class="k">class</span> <span class="i">Application</span> <span class="k">extends</span> <span class="i">\codesaur\Http\Application\Application</span>
+<span class="k">class</span> <span class="i">Application</span> <span class="k">extends</span> <span class="i">Base</span>
 {
     <span class="k">public function</span> __construct(<span class="i">ResponseInterface</span> $response)
     {

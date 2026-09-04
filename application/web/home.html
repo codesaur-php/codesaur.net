@@ -102,12 +102,12 @@
     {% endfor %}
 </div>
 
-<!-- Why Raptor: "Options" dialog -->
+<!-- Why Raptor: Options dialog (title is localized: why_dialog) -->
 <h2 class="tc-section-title">{{ t['why_title'] }}</h2>
 <p class="tc-section-lead">{{ t['why_lead'] }}</p>
 <div class="tc-dialog">
     <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
-    <span class="tc-dialog-title">Options</span>
+    <span class="tc-dialog-title">{{ t['why_dialog'] }}</span>
     <div class="row g-3">
         {% for i in range(1, 6) %}
             <div class="col-md-6 col-lg-4">
@@ -141,7 +141,7 @@
         <p class="tc-section-lead">{{ t['arch_lead'] }}</p>
         <div class="tc-window">
             <span class="tc-window-close">[<span>&#9632;</span>]</span>
-            <span class="tc-window-title">RAPTOR.PRJ</span>
+            <span class="tc-window-title">RAPTOR PROJECT</span>
             <span class="tc-window-num">2=[<span>&#8597;</span>]</span>
 <pre class="tc-tree"><span class="k">public_html/index.php</span>
  |-- <span class="g">/dashboard/*</span> -> <span class="i">Dashboard\Application</span>   <span class="c">(Admin Panel)</span>

@@ -141,7 +141,6 @@ body.tc-desktop img {
 .tc-menubar-brand img {
     height: 1.7rem;
     width: auto;
-    margin-right: .5rem;
 }
 .tc-menubar-brand:hover {
     background: transparent !important;
@@ -175,6 +174,16 @@ body.tc-desktop img {
 }
 .tc-menu-label {
     display: block;
+}
+.tc-menu-lang a {
+    gap: .35rem;
+    padding: 0 .5rem;
+}
+.tc-flag {
+    display: block;
+    width: 20px;
+    height: 15px;
+    border: 1px solid var(--tc-black);
 }
 .tc-menu-label::first-letter {
     color: var(--tc-red);

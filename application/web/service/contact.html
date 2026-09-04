@@ -5,16 +5,6 @@
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 {% endif %}
 
-<section class="bg-secondary py-4">
-    <div class="container">
-        <div class="text-center">
-            <h3 class="fw-bold text-white m-0">
-                {{ record['title'] is defined and record['title'] is not empty ? record['title']|e : 'contact'|text }}
-            </h3>
-        </div>
-    </div>
-</section>
-
 <section class="py-5">
     <div class="container">
         <div class="row">

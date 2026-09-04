@@ -756,7 +756,7 @@ PHP,
                 'doc_copy' => 'Хуулах',
                 'doc_copied' => 'Хуулагдлаа',
 
-                'raptor_modules' => 'Dashboard модулиуд',
+                'raptor_modules' => 'Хянах самбарын модулиуд',
                 'raptor_modules_lead' => 'Админ панель нь модуль тус бүр Controller, Model, template-ээ нэг хавтсанд багцалсан package-by-feature бүтэцтэй.',
                 'raptor_dir' => 'Хавтасны бүтэц',
                 'raptor_middleware' => 'Middleware pipeline',

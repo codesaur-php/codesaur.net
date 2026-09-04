@@ -15,7 +15,8 @@
                 <img src="https://img.shields.io/packagist/dt/{{ package['name'] }}?style=flat-square&color=39B54A" alt="Downloads">
                 <img src="https://img.shields.io/badge/php-%5E8.2.1-0000AA?style=flat-square&logo=php" alt="PHP version">
                 <img src="https://img.shields.io/badge/license-MIT-8DC63F?style=flat-square" alt="License">
-                {% for psr in package['psr'] %}<img src="https://img.shields.io/badge/{{ psr }}-compliant-00AAAA?style=flat-square" alt="{{ psr }}">{% endfor %}
+                <!-- shields.io: a literal dash inside the badge label must be doubled (PSR-3 becomes PSR--3), otherwise the label/message/color split breaks and shields serves its "404: badge not found" image -->
+                {% for psr in package['psr'] %}<img src="https://img.shields.io/badge/{{ psr|replace({'-': '--'}) }}-compliant-00AAAA?style=flat-square" alt="{{ psr }}">{% endfor %}
             </div>
             <div class="tc-dialog-actions">
                 <a class="tc-btn" href="{{ 'docs-doc'|link({'key': package['key'], 'doc': 'guide'}) }}">{{ t['doc_guide'] }}</a>

@@ -35,6 +35,36 @@ class PortalContent
     public const DISCUSSIONS = 'https://github.com/orgs/codesaur-php/discussions';
 
     /**
+     * Aikido Intel дээрх codesaur багцуудын жагсаалт.
+     *
+     * Aikido Intel нь нээлттэй эхийн багцуудыг хамаарлын эрүүл мэнд,
+     * засварлагдсан эмзэг байдал, malware зэргээр 0-100 оноогоор дүгнэдэг.
+     */
+    public const AIKIDO_INTEL = 'https://intel.aikido.dev/packages?ecosystem=packagist&q=codesaur';
+
+    /**
+     * Багцуудын Aikido оноог хамгийн сүүлд шалгасан огноо.
+     *
+     * Оноо нь PortalContent доторх 'aikido' утгууд дээр гараар
+     * шинэчлэгддэг тул огноог хамт нь заавал шинэчилнэ.
+     *
+     * Coupling (English): the per-package 'aikido' scores are maintained by
+     * hand; update this date in the same edit whenever you refresh them.
+     */
+    public const AIKIDO_CHECKED = '2026-09-04';
+
+    /**
+     * Багцын Aikido Intel хуудасны хаяг.
+     *
+     * @param string $name Packagist дээрх бүтэн нэр (codesaur/raptor)
+     * @return string
+     */
+    public static function aikidoLink(string $name): string
+    {
+        return "https://intel.aikido.dev/packages/packagist/$name";
+    }
+
+    /**
      * Хэлний кодыг дэмжигдсэн хэл рүү хэвийн болгох.
      *
      * @param string $code Хэлний код
@@ -64,6 +94,7 @@ class PortalContent
                 'color' => 'danger',
                 'github' => self::GITHUB_ORG . '/Raptor',
                 'packagist' => 'https://packagist.org/packages/codesaur/raptor',
+                'aikido' => 90,
                 'psr' => ['PSR-3', 'PSR-4', 'PSR-7', 'PSR-11', 'PSR-12', 'PSR-14', 'PSR-15', 'PSR-16'],
                 'requires' => ['PHP 8.2.1+', 'Composer', 'MySQL / PostgreSQL', 'ext-gd', 'ext-intl'],
                 'install' => 'composer create-project codesaur/raptor my-project',
@@ -154,6 +185,7 @@ PHP,
                 'color' => 'primary',
                 'github' => self::GITHUB_ORG . '/HTTP-Message',
                 'packagist' => 'https://packagist.org/packages/codesaur/http-message',
+                'aikido' => 98,
                 'psr' => ['PSR-7'],
                 'requires' => ['PHP 8.2.1+', 'ext-json', 'Composer'],
                 'install' => 'composer require codesaur/http-message',
@@ -225,6 +257,7 @@ PHP,
                 'color' => 'success',
                 'github' => self::GITHUB_ORG . '/Router',
                 'packagist' => 'https://packagist.org/packages/codesaur/router',
+                'aikido' => 99,
                 'psr' => [],
                 'requires' => ['PHP 8.2.1+', 'Composer'],
                 'install' => 'composer require codesaur/router',
@@ -300,6 +333,7 @@ PHP,
                 'color' => 'info',
                 'github' => self::GITHUB_ORG . '/HTTP-Application',
                 'packagist' => 'https://packagist.org/packages/codesaur/http-application',
+                'aikido' => 99,
                 'psr' => ['PSR-7', 'PSR-15'],
                 'requires' => ['PHP 8.2.1+', 'Composer', 'PSR-7 implementation (codesaur/http-message)'],
                 'install' => 'composer require codesaur/http-application',
@@ -372,6 +406,7 @@ PHP,
                 'color' => 'warning',
                 'github' => self::GITHUB_ORG . '/DataObject',
                 'packagist' => 'https://packagist.org/packages/codesaur/dataobject',
+                'aikido' => 99,
                 'psr' => [],
                 'requires' => ['PHP 8.2.1+', 'ext-pdo', 'MySQL / PostgreSQL / SQLite', 'Composer'],
                 'install' => 'composer require codesaur/dataobject',
@@ -456,6 +491,7 @@ PHP,
                 'color' => 'secondary',
                 'github' => self::GITHUB_ORG . '/Template',
                 'packagist' => 'https://packagist.org/packages/codesaur/template',
+                'aikido' => 98,
                 'psr' => [],
                 'requires' => ['PHP 8.2.1+', 'ext-json', 'ext-mbstring', 'Composer'],
                 'install' => 'composer require codesaur/template',
@@ -518,6 +554,7 @@ PHP,
                 'color' => 'primary',
                 'github' => self::GITHUB_ORG . '/HTTP-Client',
                 'packagist' => 'https://packagist.org/packages/codesaur/http-client',
+                'aikido' => 99,
                 'psr' => [],
                 'requires' => ['PHP 8.2.1+', 'ext-curl', 'ext-json', 'Composer'],
                 'install' => 'composer require codesaur/http-client',
@@ -579,6 +616,7 @@ PHP,
                 'color' => 'dark',
                 'github' => self::GITHUB_ORG . '/Container',
                 'packagist' => 'https://packagist.org/packages/codesaur/container',
+                'aikido' => 96,
                 'psr' => ['PSR-11'],
                 'requires' => ['PHP 8.2.1+', 'Composer'],
                 'install' => 'composer require codesaur/container',
@@ -724,6 +762,11 @@ PHP,
 
                 'packages_title' => 'codesaur багцууд',
                 'packages_lead' => 'Packagist дээр нийтлэгдсэн, MIT лицензтэй, PHP 8.2.1+ шаарддаг бие даасан багцууд.',
+                'aikido_title' => 'Аюулгүй байдлын үнэлгээ',
+                'aikido_lead' => 'Aikido Intel нь нээлттэй эхийн багцуудыг хамаарлын эрүүл мэнд, эмзэг байдал, malware зэргээр 0-100 оноогоор бие даан дүгнэдэг. codesaur багцууд бүгд 90-ээс дээш оноотой, malware илрээгүй.',
+                'aikido_score' => 'Aikido оноо',
+                'aikido_checked' => 'Шалгасан',
+                'aikido_all' => 'Бүх багцын оноог Aikido Intel дээр үзэх',
                 'package_installed' => 'Суулгасан хувилбар',
                 'package_install' => 'Суулгах',
                 'package_features' => 'Онцлогууд',
@@ -839,6 +882,11 @@ PHP,
 
                 'packages_title' => 'codesaur packages',
                 'packages_lead' => 'Standalone packages published on Packagist, MIT licensed, requiring PHP 8.2.1+.',
+                'aikido_title' => 'Security health',
+                'aikido_lead' => 'Aikido Intel independently scores open source packages from 0 to 100 on dependency health, known vulnerabilities and malware. Every codesaur package scores above 90 with no malware found.',
+                'aikido_score' => 'Aikido score',
+                'aikido_checked' => 'Checked',
+                'aikido_all' => 'See every score on Aikido Intel',
                 'package_installed' => 'Installed version',
                 'package_install' => 'Install',
                 'package_features' => 'Features',

@@ -1,4 +1,4 @@
-<!-- Variables: t, lang, packages, packagist_user, github_org -->
+<!-- Variables: t, lang, packages, packagist_user, github_org, aikido_intel, aikido_checked -->
 
 <h1 class="tc-section-title mt-0">{{ t['packages_title'] }}</h1>
 <p class="tc-section-lead">{{ t['packages_lead'] }}</p>
@@ -16,6 +16,7 @@
                     <th>{{ t['package_installed'] }}</th>
                     <th>Packagist</th>
                     <th>PSR</th>
+                    <th>{{ t['aikido_score'] }}</th>
                     <th>{{ t['package_docs'] }}</th>
                 </tr>
             </thead>
@@ -26,6 +27,7 @@
                         <td>{{ pkg['version'] ?? '-' }}</td>
                         <td><img src="https://img.shields.io/packagist/v/{{ pkg['name'] }}?style=flat-square&color=00A651&label=" alt="version" style="height:18px;vertical-align:middle"></td>
                         <td>{{ pkg['psr'] is not empty ? pkg['psr']|join(', ') : '-' }}</td>
+                        <td><a href="{{ pkg['aikido_link'] }}" target="_blank" rel="noopener" title="Aikido Intel">{{ pkg['aikido'] }}<span class="tc-gray">/100</span></a></td>
                         <td>
                             <a href="{{ 'docs-doc'|link({'key': key, 'doc': 'guide'}) }}">{{ t['doc_guide'] }}</a> &middot;
                             <a href="{{ 'docs-doc'|link({'key': key, 'doc': 'api'}) }}">API</a>
@@ -38,6 +40,21 @@
     <span class="tc-window-foot"><b>{{ packages|length }}</b> packages &#9552;&#9552; <a href="{{ packagist_user }}" target="_blank" rel="noopener">packagist.org/users/codesaur</a></span>
 </div>
 
+<!-- Aikido Intel: independent security health score -->
+<div class="tc-dialog mt-4">
+    <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+    <span class="tc-dialog-title">{{ t['aikido_title'] }}</span>
+    <p class="mb-3">{{ t['aikido_lead'] }}</p>
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        {% for key, pkg in packages %}
+            <a class="tc-btn tc-btn-sm tc-btn-alt" href="{{ pkg['aikido_link'] }}" target="_blank" rel="noopener">{{ pkg['title'] }} <b>{{ pkg['aikido'] }}</b></a>
+        {% endfor %}
+    </div>
+    <div class="tc-dialog-actions mt-0">
+        <a class="tc-btn tc-btn-sm" href="{{ aikido_intel }}" target="_blank" rel="noopener">{{ t['aikido_all'] }}</a>
+        <span class="align-self-center small">{{ t['aikido_checked'] }}: {{ aikido_checked }}</span>
+    </div>
+</div>
 <!-- Tiled package windows -->
 <div class="row g-4 mt-1">
     {% for key, pkg in packages %}

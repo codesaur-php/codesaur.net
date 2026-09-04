@@ -1,4 +1,4 @@
-<!-- Variables: t, lang, package, packages, index -->
+<!-- Variables: t, lang, package, packages, index, aikido_intel, aikido_checked -->
 
 <div class="tc-window tc-window-scroll">
     <span class="tc-window-close">[<span>&#9632;</span>]</span>
@@ -16,6 +16,7 @@
                 <img src="https://img.shields.io/badge/php-%5E8.2.1-0000AA?style=flat-square&logo=php" alt="PHP version">
                 <img src="https://img.shields.io/badge/license-MIT-8DC63F?style=flat-square" alt="License">
                 <!-- shields.io: a literal dash inside the badge label must be doubled (PSR-3 becomes PSR--3), otherwise the label/message/color split breaks and shields serves its "404: badge not found" image -->
+                {% if package['aikido'] is not empty %}<a href="{{ package['aikido_link'] }}" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/aikido-{{ package['aikido'] }}%2F100-00A651?style=flat-square" alt="Aikido Intel {{ package['aikido'] }}/100"></a>{% endif %}
                 {% for psr in package['psr'] %}<img src="https://img.shields.io/badge/{{ psr|replace({'-': '--'}) }}-compliant-00AAAA?style=flat-square" alt="{{ psr }}">{% endfor %}
             </div>
             <div class="tc-dialog-actions">
@@ -85,6 +86,14 @@
                     {% for req in package['requires'] %}<li>{{ req }}</li>{% endfor %}
                 </ul>
             </div>
+
+            {% if package['aikido'] is not empty %}
+            <div class="tc-group">
+                <span class="tc-group-label">{{ t['aikido_score'] }}</span>
+                <a href="{{ package['aikido_link'] }}" target="_blank" rel="noopener"><b>{{ package['aikido'] }}</b>/100</a>
+                <div class="small tc-gray">{{ t['aikido_checked'] }}: {{ aikido_checked }}</div>
+            </div>
+            {% endif %}
 
             {% if package['depends'] is not empty %}
             <div class="tc-group">

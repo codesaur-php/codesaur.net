@@ -69,6 +69,8 @@ class PortalController extends TemplateController
             'packages' => self::withInstalledVersions(PortalContent::packages()),
             'packagist_user' => PortalContent::PACKAGIST_USER,
             'github_org' => PortalContent::GITHUB_ORG,
+            'aikido_intel' => PortalContent::AIKIDO_INTEL,
+            'aikido_checked' => PortalContent::AIKIDO_CHECKED,
         ])->render();
 
         $this->log('web', LogLevel::NOTICE, '[{server_request.code}] Багцуудын жагсаалтыг уншиж байна', ['action' => 'portal-packages']);
@@ -106,13 +108,16 @@ class PortalController extends TemplateController
             't' => $t,
             'package' => $package,
             'packages' => $packages,
+            'aikido_intel' => PortalContent::AIKIDO_INTEL,
+            'aikido_checked' => PortalContent::AIKIDO_CHECKED,
         ])->render();
 
         $this->log('web', LogLevel::NOTICE, '[{server_request.code}] {name} багцын хуудсыг уншиж байна', ['action' => 'portal-package', 'name' => $package['name']]);
     }
 
     /**
-     * Багц бүрд суулгасан хувилбарыг (Composer runtime API) нэмэх.
+     * Багц бүрд суулгасан хувилбар (Composer runtime API) болон
+     * Aikido Intel хуудасны холбоос нэмэх.
      *
      * Raptor өөрөө root багц тул хувилбар нь composer.json extra.version-оос
      * биш Packagist-аас харагдана - түүнд version талбар нэмэхгүй.
@@ -125,6 +130,7 @@ class PortalController extends TemplateController
         foreach ($packages as $key => &$package) {
             $package['key'] = $key;
             $package['version'] = null;
+            $package['aikido_link'] = PortalContent::aikidoLink($package['name']);
             if ($key === 'raptor') {
                 continue;
             }

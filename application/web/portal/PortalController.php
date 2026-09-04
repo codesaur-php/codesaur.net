@@ -119,11 +119,38 @@ class PortalController extends TemplateController
     }
 
     /**
+     * Raptor фреймворкийн хувилбарыг төслийн CHANGELOG.md-ээс унших.
+     *
+     * Raptor нь Composer-ын хамаарал биш (эх код нь энэ төслийн мод өөрөө)
+     * тул InstalledVersions түүнийг мэдэхгүй. Гэхдээ фреймворкийн CHANGELOG
+     * төслийн root-д хэвээр байдаг - portal нь /docs/raptor/changelog дээр
+     * яг түүнийг рендерлэдэг - бөгөөд түүний хамгийн дээд гарчиг нь одоо
+     * ажиллаж буй фреймворкийн хувилбар юм.
+     *
+     * Coupling (English): upstream Raptor-ыг шингээх бүрд CHANGELOG.md-ийн
+     * шинэ хувилбарын гарчгийг заавал нэмнэ - багцын хуудсууд дээр харагдах
+     * Raptor-ийн хувилбар үүнээс л гардаг.
+     *
+     * @return string|null 'v5.2.1' хэлбэртэй, эсвэл олдохгүй бол null
+     */
+    private static function raptorVersion(): ?string
+    {
+        $changelog = DocsController::packageRoot('raptor') . '/CHANGELOG.md';
+        $head = @\file_get_contents($changelog, false, null, 0, 4096);
+        if ($head === false
+            || \preg_match('/^## \[(\d+\.\d+\.\d+)\]/m', $head, $matches) !== 1
+        ) {
+            return null;
+        }
+        return 'v' . $matches[1];
+    }
+    /**
      * Багц бүрд суулгасан хувилбар (Composer runtime API) болон
      * Aikido Intel хуудасны холбоос нэмэх.
      *
-     * Raptor өөрөө root багц тул хувилбар нь composer.json extra.version-оос
-     * биш Packagist-аас харагдана - түүнд version талбар нэмэхгүй.
+     * Raptor бол Composer-ын хамаарал биш - түүний эх код нь энэ төслийн
+     * мод өөрөө тул InstalledVersions түүнийг мэдэхгүй. Иймд хувилбарыг
+     * төслийн root дахь CHANGELOG.md-ээс уншина (raptorVersion()).
      *
      * @param array<string, array> $packages
      * @return array<string, array>
@@ -135,6 +162,7 @@ class PortalController extends TemplateController
             $package['version'] = null;
             $package['aikido_link'] = PortalContent::aikidoLink($package['name']);
             if ($key === 'raptor') {
+                $package['version'] = self::raptorVersion();
                 continue;
             }
             try {

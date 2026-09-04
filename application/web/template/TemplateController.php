@@ -44,7 +44,7 @@ class TemplateController extends \Dashboard\Controller
      * 2) content template-г ачааж index layout дотор `{{ content }}` хувьсагчид суулгана
      * 3) $vars дотроос SEO meta (title, code, description, photo) талбаруудыг
      *    автоматаар index layout-д `record_*` prefix-ээр дамжуулна
-     * 4) System settings (favicon, title, description...) дамжуулна
+     * 4) System settings (favicon, title, description, logo...) дамжуулна
      * 5) Main Menu болон Featured Pages-г тухайн хэл дээр динамик байдлаар үүсгэнэ
      *
      * SEO meta автомат map:
@@ -98,8 +98,23 @@ class TemplateController extends \Dashboard\Controller
         $index->set('current_url', (string) $uri);
 
         // System settings (favicon, SEO, branding...)
-        foreach ($this->getAttribute('settings', []) as $key => $value) {
+        $settings = $this->getAttribute('settings', []);
+        foreach ($settings as $key => $value) {
             $index->set($key, $value);
+        }
+
+        // Сайтын лого, нэр - Settings дээрх (хэл тус бүрийн) утгууд. Лого
+        // тохируулаагүй бол багцтай хамт ирдэг leaf лого руу буцаж унана.
+        // Контент template-үүд (home, raptor...) settings хувьсагчдыг шууд
+        // авдаггүй (record-ийн title/description-той мөргөлдөх тул) - тиймээс
+        // site_ угтвартайгаар layout болон контент хоёуланд нь өгнө.
+        $siteLogo = $settings['logo'] ?? '';
+        if ($siteLogo === '') {
+            $siteLogo = $this->getScriptPath() . '/assets/portal/logo.png';
+        }
+        foreach ([$index, $content] as $tmpl) {
+            $tmpl->set('site_logo', $siteLogo);
+            $tmpl->set('site_title', $settings['title'] ?? '');
         }
 
         // Navigation menu (сонгосон хэлээр, cache-тэй)

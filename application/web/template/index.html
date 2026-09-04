@@ -10,7 +10,7 @@
         {% if favicon is not empty %}
             <link rel="icon" href="{{ favicon }}" type="image/x-icon">
         {% else %}
-            <link rel="icon" href="{{ index }}/assets/portal/logo.png" type="image/png">
+            <link rel="icon" href="{{ site_logo }}">
         {% endif %}
         {% if apple_touch_icon is not empty %}<link rel="apple-touch-icon" href="{{ apple_touch_icon }}">{% endif %}
         <link rel="alternate" type="application/rss+xml" title="{{ title }} RSS" href="{{ 'rss'|link }}">
@@ -20,7 +20,7 @@
         <meta property="og:url" content="{{ current_url|e }}">
         {% if (record_description ?? description) is not empty %}<meta property="og:description" content="{{ (record_description ?? description)|e }}">{% endif %}
         {% if record_photo is not empty %}<meta property="og:image" content="{{ (record_photo starts with 'http' ? record_photo : base_url ~ record_photo)|e }}">{% endif %}
-        {% if record_photo is empty %}<meta property="og:image" content="{{ base_url ~ index }}/assets/portal/logo.png">{% endif %}
+        {% if record_photo is empty %}<meta property="og:image" content="{{ (site_logo starts with 'http' ? site_logo : base_url ~ site_logo)|e }}">{% endif %}
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;0,700;1,400&display=swap" rel="stylesheet">
@@ -35,8 +35,8 @@
         <!-- Menu bar (Turbo C style) -->
         <header class="tc-menubar">
             <div class="tc-menubar-inner">
-                <a class="tc-menubar-brand" href="{{ 'home'|link }}" title="codesaur.net">
-                    <img src="{{ index }}/assets/portal/logo.png" alt="codesaur.net">
+                <a class="tc-menubar-brand" href="{{ 'home'|link }}" title="{{ title|e }}">
+                    <img src="{{ site_logo }}" alt="{{ title|e }}">
                 </a>
                 <button class="tc-menu-toggle" type="button" aria-label="Menu">&#8801; {{ 'menu'|text }}</button>
                 <ul class="tc-menu">

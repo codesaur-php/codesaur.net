@@ -67,12 +67,12 @@ if ($ref !== 'refs/heads/main') {
     exit("ignored ref: $ref\n");
 }
 
-// deploy.ps1-ийг СИНХРОН ажиллуулж, гаралтыг log хийнэ. (Apache service-ийн дор
-// detached процесс найдваргүй тул синхрон + бүрэн log авна.) composer хурдан тул
-// ихэвчлэн хэдхэн секунд. PowerShell-ийг бүтэн зам-аар дуудна (Apache PATH хязгаарлагдмал).
-$root    = \dirname(__DIR__);
-$deploy  = $root . '\\scripts\\deploy.ps1';
-$hookLog = $root . '\\scripts\\deploy-hook.log';
+// deploy.ps1-ийг ажиллуулж, гаралтыг log хийнэ. PowerShell-ийг бүтэн зам-аар
+// дуудна (Apache PATH хязгаарлагдмал).
+$root     = \dirname(__DIR__);
+$deploy   = $root . '\\scripts\\deploy.ps1';
+$hookLog  = $root . '\\scripts\\deploy-hook.log';
+$lockFile = $root . '\\scripts\\deploy.lock';
 
 $psExe = ($_SERVER['SystemRoot'] ?? 'C:\\Windows') . '\\System32\\WindowsPowerShell\\v1.0\\powershell.exe';
 if (!\is_file($psExe)) {
@@ -85,12 +85,54 @@ if (!\function_exists('exec')) {
     exit("exec disabled\n");
 }
 
+// Зэрэг ажиллахаас сэргийлэх түгжээ. Хариуг эрт буцаадаг болсноос хойш хоёр push
+// хормын зөрүүтэй ирвэл хоёр deploy давхцаж, нэг нь git reset хийж байхад нөгөө нь
+// composer install хийх эрсдэлтэй. Түгжээг авч чадаагүй бол одоо ажиллаж байгаа
+// deploy шинэ commit-ийг ямар ч байсан татах тул алгасахад аюулгүй.
+$lock = @\fopen($lockFile, 'c');
+if ($lock === false || !\flock($lock, \LOCK_EX | \LOCK_NB)) {
+    \http_response_code(202);
+    exit("deploy already running\n");
+}
+
+// ---------------------------------------------------------------------------
+// Хариуг ЭХЛЭЭД буцааж, дараа нь deploy ажиллуулна.
+//
+// GitHub webhook-д хариу өгөх хугацаа 10 секунд. deploy.ps1 (git reset ->
+// composer install -> cache цэвэрлэх) ердийн үед 10-15 секунд явдаг тул хариуг
+// deploy дууссаны дараа буцаавал GitHub delivery-г "An exception occurred"
+// (timeout) гэж тэмдэглээд дахин илгээдэг - deploy амжилттай болсон ч.
+//
+// Critical (English): GitHub gives a webhook 10 seconds to respond and a full
+// deploy takes longer, so the response MUST be flushed before deploy.ps1 runs.
+// Otherwise every delivery is recorded as failed and retried, which can fire a
+// second deploy on top of the running one. Never move the exec() above this.
+// ---------------------------------------------------------------------------
+\ignore_user_abort(true);
+@\set_time_limit(0);
+if (\function_exists('apache_setenv')) {
+    @\apache_setenv('no-gzip', '1');
+}
+@\ini_set('zlib.output_compression', '0');
+
+$accepted = "deploy accepted\n";
+\http_response_code(202);
+\header('Content-Length: ' . \strlen($accepted));
+\header('Connection: close');
+echo $accepted;
+while (\ob_get_level() > 0) {
+    @\ob_end_flush();
+}
+@\flush();
+
+// Эндээс цааш GitHub хариугаа авчихсан - хэр удсан ч delivery-д нөлөөлөхгүй.
+$started = \date('Y-m-d H:i:s');
 $cmd = "\"$psExe\" -ExecutionPolicy Bypass -NonInteractive -File \"$deploy\" -Force 2>&1";
 $out = [];
 $code = null;
 \exec($cmd, $out, $code);
 
-$entry = \date('Y-m-d H:i:s') . " webhook deploy: exit=$code\n"
+$entry = "$started webhook deploy: exit=$code (дууссан " . \date('H:i:s') . ")\n"
     . "  cmd: $cmd\n"
     . "  whoami: " . \trim(\shell_exec('whoami') ?: '?') . "\n"
     . (empty($out) ? "  (no output - powershell ажиллуулж чадсангүй?)\n" : "  " . \implode("\n  ", $out) . "\n");
@@ -105,5 +147,5 @@ if (\is_file($hookLog) && \filesize($hookLog) > 512 * 1024) {
 }
 @\file_put_contents($hookLog, $entry, \FILE_APPEND);
 
-\http_response_code(202);
-echo "deploy triggered (exit $code)\n";
+\flock($lock, \LOCK_UN);
+\fclose($lock);

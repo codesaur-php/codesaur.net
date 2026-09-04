@@ -20,6 +20,9 @@
 /scripts/deploy.log
 /scripts/deploy-hook.log
 
+# Webhook-ийн зэрэг ажиллахаас сэргийлэх түгжээ (deploy-hook.php үүсгэдэг)
+/scripts/deploy.lock
+
 # Environment variables - серверийн нууц тохиргоо (DB нууц үг, API key, JWT secret гэх мэт)
 # Энэ файлд системийн нэвтрэх эрх, нууц түлхүүрүүд агуулагддаг тул git-д оруулж болохгүй.
 .env

@@ -852,12 +852,17 @@ body.tc-desktop img {
     font-size: 1.35rem;
     margin: 2rem 0 .25rem;
 }
+/* Whitespace written directly after a CSS hex escape is swallowed as the
+ * escape terminator, so "\2550\2550 " renders with NO trailing
+ * space and the heading sticks to the rule. The separating space is an
+ * explicit \00A0 nbsp on both sides, which also keeps the marks on the
+ * heading's own line. */
 .tc-section-title::before {
-    content: "\2550\2550 ";
+    content: "\2550\2550\00A0";
     color: var(--tc-white);
 }
 .tc-section-title::after {
-    content: " \2550\2550";
+    content: "\00A0\2550\2550";
     color: var(--tc-white);
 }
 .tc-section-lead {

@@ -65,4 +65,4 @@ Disallow: /public/
 
 # --- Sitemap ---
 # Replace with your actual domain
-Sitemap: https://example.com/sitemap.xml
+Sitemap: https://codesaur.net/sitemap.xml

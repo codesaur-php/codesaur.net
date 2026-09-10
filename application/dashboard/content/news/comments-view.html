@@ -50,7 +50,7 @@
         </div>
         {% if record['content'] is not empty %}
         <div class="mt-3" style="max-height:300px; overflow-y:auto">
-            {{ record['content'] }}
+            {{ record['content']|raw }}
         </div>
         {% endif %}
     </div>
@@ -82,13 +82,13 @@
                         </button>
                     {% endif %}
                     {% if user.can('system_content_delete') %}
-                        <button class="btn btn-sm btn-outline-danger ms-1 delete-comment" data-id="{{ c.id }}" {{ c.parent_id ? '' : 'data-root="1"' }}>
+                        <button class="btn btn-sm btn-outline-danger ms-1 delete-comment" data-id="{{ c.id }}" {{ (c.parent_id ? '' : 'data-root="1"')|raw }}>
                             <i class="bi bi-trash"></i>
                         </button>
                     {% endif %}
                 </div>
             </div>
-            <div class="mt-1">{{ c.comment|e|nl2br }}</div>
+            <div class="mt-1">{{ c.comment|e|nl2br|raw }}</div>
         </div>
         {% endfor %}
     </div>

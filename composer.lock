@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c83429e76680544a28ffe4c3aa750ad2",
+    "content-hash": "8b3c0af4942f4a77bce89b8d0fea0b5b",
     "packages": [
         {
             "name": "codesaur/container",
@@ -68,16 +68,16 @@
         },
         {
             "name": "codesaur/dataobject",
-            "version": "v10.1.1",
+            "version": "v10.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/codesaur-php/DataObject.git",
-                "reference": "aa40d79eee00224d7c8ab235e5ddc8da1756f472"
+                "reference": "b061155ee67e7bda9a86afcd493bfbc7005806ba"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/codesaur-php/DataObject/zipball/aa40d79eee00224d7c8ab235e5ddc8da1756f472",
-                "reference": "aa40d79eee00224d7c8ab235e5ddc8da1756f472",
+                "url": "https://api.github.com/repos/codesaur-php/DataObject/zipball/b061155ee67e7bda9a86afcd493bfbc7005806ba",
+                "reference": "b061155ee67e7bda9a86afcd493bfbc7005806ba",
                 "shasum": ""
             },
             "require": {
@@ -126,9 +126,9 @@
             ],
             "support": {
                 "issues": "https://github.com/codesaur-php/DataObject/issues",
-                "source": "https://github.com/codesaur-php/DataObject/tree/v10.1.1"
+                "source": "https://github.com/codesaur-php/DataObject/tree/v10.2.1"
             },
-            "time": "2026-07-03T06:58:47+00:00"
+            "time": "2026-09-09T10:31:06+00:00"
         },
         {
             "name": "codesaur/http-application",
@@ -384,16 +384,16 @@
         },
         {
             "name": "codesaur/template",
-            "version": "v4.1.1",
+            "version": "v5.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/codesaur-php/Template.git",
-                "reference": "7cbbd9ea517d6994eba5e1b845c3e7c2e79ca9b1"
+                "reference": "d82bb851bcea403d722c31acb7484c4928b3bcca"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/codesaur-php/Template/zipball/7cbbd9ea517d6994eba5e1b845c3e7c2e79ca9b1",
-                "reference": "7cbbd9ea517d6994eba5e1b845c3e7c2e79ca9b1",
+                "url": "https://api.github.com/repos/codesaur-php/Template/zipball/d82bb851bcea403d722c31acb7484c4928b3bcca",
+                "reference": "d82bb851bcea403d722c31acb7484c4928b3bcca",
                 "shasum": ""
             },
             "require": {
@@ -442,9 +442,9 @@
             ],
             "support": {
                 "issues": "https://github.com/codesaur-php/Template/issues",
-                "source": "https://github.com/codesaur-php/Template/tree/v4.1.1"
+                "source": "https://github.com/codesaur-php/Template/tree/v5.0.0"
             },
-            "time": "2026-07-04T03:06:56+00:00"
+            "time": "2026-09-09T09:17:04+00:00"
         },
         {
             "name": "fig/http-message-util",

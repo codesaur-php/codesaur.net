@@ -84,7 +84,7 @@
             <div class="list-group">
                 {% for file in files %}
                 {% set previewable = file.type in ['image', 'video', 'audio'] or file.mime_content_type == 'application/pdf' %}
-                <a href="{{ file.path|e }}" {{ previewable ? 'target="_blank"' : 'download' }} class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                <a href="{{ file.path|e }}" {{ (previewable ? 'target="_blank"' : 'download')|raw }} class="list-group-item list-group-item-action d-flex align-items-center gap-2">
                     {% if file.type == 'image' %}
                         <i class="bi bi-file-image text-success"></i>
                     {% elseif file.type == 'video' %}
@@ -144,13 +144,13 @@
                         </button>
                     {% endif %}
                     {% if user.can('system_content_delete') %}
-                        <button class="btn btn-sm btn-outline-danger ms-1 delete-comment" data-id="{{ c.id }}" {{ c.parent_id ? '' : 'data-root="1"' }}>
+                        <button class="btn btn-sm btn-outline-danger ms-1 delete-comment" data-id="{{ c.id }}" {{ (c.parent_id ? '' : 'data-root="1"')|raw }}>
                             <i class="bi bi-trash"></i>
                         </button>
                     {% endif %}
                 </div>
             </div>
-            <div class="mt-1">{{ c.comment|e|nl2br }}</div>
+            <div class="mt-1">{{ c.comment|e|nl2br|raw }}</div>
         </div>
         {% endfor %}
     </div>

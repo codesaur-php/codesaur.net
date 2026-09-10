@@ -113,7 +113,7 @@
         <!-- Footer note (on the desktop) -->
         <div class="tc-footer-note">
             <div>
-                {{ copyright }}
+                {{ copyright|raw }}
                 {% if email is not empty %} &middot; <a href="mailto:{{ email|e }}">{{ email }}</a>{% endif %}
                 {% if phone is not empty %} &middot; <a href="tel:{{ phone|e }}">{{ phone }}</a>{% endif %}
             </div>

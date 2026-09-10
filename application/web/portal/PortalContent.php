@@ -51,7 +51,7 @@ class PortalContent
      * Coupling (English): the per-package 'aikido' scores are maintained by
      * hand; update this date in the same edit whenever you refresh them.
      */
-    public const AIKIDO_CHECKED = '2026-09-04';
+    public const AIKIDO_CHECKED = '2026-09-10';
 
     /**
      * Багцын Aikido Intel хуудасны хаяг.
@@ -94,7 +94,7 @@ class PortalContent
                 'color' => 'danger',
                 'github' => self::GITHUB_ORG . '/Raptor',
                 'packagist' => 'https://packagist.org/packages/codesaur/raptor',
-                'aikido' => 90,
+                'aikido' => 91,
                 'psr' => ['PSR-3', 'PSR-4', 'PSR-7', 'PSR-11', 'PSR-12', 'PSR-14', 'PSR-15', 'PSR-16'],
                 'requires' => ['PHP 8.2.1+', 'Composer', 'MySQL / PostgreSQL', 'ext-gd', 'ext-intl'],
                 'install' => 'composer create-project codesaur/raptor my-project',
@@ -116,7 +116,7 @@ class PortalContent
                         'Дэлгүүр модуль: Бүтээгдэхүүн, Захиалга, Үнэлгээ',
                         'MySQL, PostgreSQL алийг нь ч дэмжинэ',
                         'SQL файл суурьтай өгөгдлийн сангийн migration систем',
-                        'codesaur/template engine (Twig маягийн синтакс)',
+                        'codesaur/template engine (Twig маягийн синтакс, autoescape-тай XSS хамгаалалт)',
                         'OpenAI интеграци (moedit editor)',
                         'PSR-3 лог систем, PSR-14 Event Dispatcher',
                         'И-мэйл (Brevo API, SMTP, PHP mail), Discord webhook мэдэгдэл',
@@ -135,7 +135,7 @@ class PortalContent
                         'Shop module: Products, Orders, Reviews',
                         'MySQL or PostgreSQL supported',
                         'SQL file-based database migration system',
-                        'codesaur/template engine (Twig-style syntax)',
+                        'codesaur/template engine (Twig-style syntax, XSS protection through autoescape)',
                         'OpenAI integration (moedit editor)',
                         'PSR-3 logging, PSR-14 Event Dispatcher',
                         'Email (Brevo API, SMTP, PHP mail), Discord webhook notifications',
@@ -279,7 +279,7 @@ PHP,
                 'color' => 'success',
                 'github' => self::GITHUB_ORG . '/Router',
                 'packagist' => 'https://packagist.org/packages/codesaur/router',
-                'aikido' => 99,
+                'aikido' => 98,
                 'psr' => [],
                 'requires' => ['PHP 8.2.1+', 'Composer'],
                 'install' => 'composer require codesaur/router',
@@ -355,7 +355,7 @@ PHP,
                 'color' => 'info',
                 'github' => self::GITHUB_ORG . '/HTTP-Application',
                 'packagist' => 'https://packagist.org/packages/codesaur/http-application',
-                'aikido' => 99,
+                'aikido' => 98,
                 'psr' => ['PSR-7', 'PSR-15'],
                 'requires' => ['PHP 8.2.1+', 'Composer', 'PSR-7 implementation (codesaur/http-message)'],
                 'install' => 'composer require codesaur/http-application',
@@ -428,7 +428,7 @@ PHP,
                 'color' => 'warning',
                 'github' => self::GITHUB_ORG . '/DataObject',
                 'packagist' => 'https://packagist.org/packages/codesaur/dataobject',
-                'aikido' => 99,
+                'aikido' => 100,
                 'psr' => [],
                 'requires' => ['PHP 8.2.1+', 'ext-pdo', 'MySQL / PostgreSQL / SQLite', 'Composer'],
                 'install' => 'composer require codesaur/dataobject',
@@ -437,8 +437,8 @@ PHP,
                     'en' => 'PDO-based data model and table management component (MySQL / PostgreSQL / SQLite)',
                 ],
                 'description' => [
-                    'mn' => 'codesaur экосистемийн өгөгдлийн давхаргын үндсэн компонент. Model класс дээр багануудаа тодорхойлоход хүснэгтийг анх ашиглах үед автоматаар үүсгэж, insert / update / select / delete үйлдлүүдийг MySQL, PostgreSQL, SQLite дээр адилхан кодоор гүйцэтгэнэ. LocalizedModel нь олон хэлний контентыг {table}_content хүснэгтэд салгаж хадгална.',
-                    'en' => 'The core data layer component of the codesaur ecosystem. Declare columns on a Model class and the table is created automatically on first use; insert / update / select / delete run with the same code on MySQL, PostgreSQL and SQLite. LocalizedModel stores multi-language content in a separate {table}_content table.',
+                    'mn' => 'codesaur экосистемийн өгөгдлийн давхаргын үндсэн компонент. Model класс дээр багануудаа тодорхойлоход хүснэгтийг анх ашиглах үед автоматаар үүсгэж, insert / update / select / delete үйлдлүүдийг MySQL, PostgreSQL, SQLite дээр адилхан кодоор гүйцэтгэнэ. LocalizedModel нь олон хэлний контентыг {table}_content хүснэгтэд салгаж хадгална. ORDER BY гэх мэт параметрчилэх боломжгүй байрлалд хэрэглэгчийн оролт орох үед модель өөрөө цагаан жагсаалт болж ажиллана (assertColumn, orderBy).',
+                    'en' => 'The core data layer component of the codesaur ecosystem. Declare columns on a Model class and the table is created automatically on first use; insert / update / select / delete run with the same code on MySQL, PostgreSQL and SQLite. LocalizedModel stores multi-language content in a separate {table}_content table. Where user input reaches an identifier position that cannot be parameterized (ORDER BY, GROUP BY), the model acts as its own whitelist (assertColumn, orderBy).',
                 ],
                 'features' => [
                     'mn' => [
@@ -448,6 +448,7 @@ PHP,
                         'Хүснэгтийг анх ашиглах үед автоматаар үүсгэх, __initial() hook',
                         'MySQL / PostgreSQL / SQLite нэг кодоор - Constants::DRIVER_*',
                         'getById, getRowWhere, getRows, countRows, insert, updateById, deleteById',
+                        'assertColumn / assertDirection / quoteIdentifier / orderBy - ORDER BY, GROUP BY-д хэрэглэгчийн оролт оруулах цагаан жагсаалт (SQL injection хамгаалалт)',
                         'PDOTrait, TableTrait - дахин ашиглагдах PDO/хүснэгтийн үйлдлүүд',
                     ],
                     'en' => [
@@ -457,16 +458,17 @@ PHP,
                         'Automatic table creation on first use with an __initial() hook',
                         'MySQL / PostgreSQL / SQLite with one codebase - Constants::DRIVER_*',
                         'getById, getRowWhere, getRows, countRows, insert, updateById, deleteById',
+                        'assertColumn / assertDirection / quoteIdentifier / orderBy - whitelist for user input in ORDER BY and GROUP BY (SQL injection guard)',
                         'PDOTrait, TableTrait - reusable PDO / table operations',
                     ],
                 ],
                 'classes' => [
                     ['Model', ['mn' => 'Нэг хүснэгтэд зориулсан загварын суурь класс', 'en' => 'Base class for models targeting a single table']],
-                    ['LocalizedModel', ['mn' => 'Олон хэл дээрх контент хадгалах загварын суурь класс', 'en' => 'Base class for models storing content in multiple languages']],
+                    ['LocalizedModel', ['mn' => 'Олон хэл дээрх контент хадгалах загварын суурь класс - orderBy() нь JOIN alias-тай нь буцаана', 'en' => 'Base class for models storing content in multiple languages - orderBy() returns the column with its JOIN alias']],
                     ['Column', ['mn' => 'Хүснэгтийн баганын бүтцийг тодорхойлох класс', 'en' => 'Defines table column structure']],
                     ['Constants', ['mn' => 'Driver, error code, column нэрсийн тогтмолууд', 'en' => 'Centralized drivers, error codes, column name constants']],
                     ['PDOTrait', ['mn' => 'PDO үйлдлүүдийг төвлөрүүлсэн trait', 'en' => 'Trait centralizing PDO operations']],
-                    ['TableTrait', ['mn' => 'Хүснэгттэй ажиллах үндсэн боломжуудын trait', 'en' => 'Trait with basic table operations']],
+                    ['TableTrait', ['mn' => 'Хүснэгттэй ажиллах үндсэн боломжууд ба баганын цагаан жагсаалтын trait', 'en' => 'Trait with basic table operations and the column whitelist helpers']],
                 ],
                 'example' => <<<'PHP'
 use codesaur\DataObject\Model;
@@ -504,6 +506,12 @@ $user = $userModel->insert([
 $user = $userModel->getById(1);
 $user = $userModel->getRowWhere(['username' => 'john']);
 $total = $userModel->countRows(['WHERE' => 'is_active=1']);
+
+// Эрэмбэлэлт: хэрэглэгчийн оролт баганын цагаан жагсаалтаар шүүгдэнэ
+// Ordering: user input is filtered through the model column whitelist
+$rows = $userModel->getRows([
+    'ORDER BY' => $userModel->orderBy($_GET['sort'] ?? 'id', $_GET['dir'] ?? 'DESC')
+]);
 PHP,
             ],
             'template' => [
@@ -518,27 +526,33 @@ PHP,
                 'requires' => ['PHP 8.2.1+', 'ext-json', 'ext-mbstring', 'Composer'],
                 'install' => 'composer require codesaur/template',
                 'summary' => [
-                    'mn' => 'Бие даасан PHP template engine - filters, functions, macros, expression parser',
-                    'en' => 'Self-contained PHP template engine - filters, functions, macros, expression parser',
+                    'mn' => 'Бие даасан PHP template engine - autoescape, filters, functions, macros, expression parser',
+                    'en' => 'Self-contained PHP template engine - autoescape, filters, functions, macros, expression parser',
                 ],
                 'description' => [
-                    'mn' => 'Хөгжлийн явцад Twig template engine-ийн синтакс, дизайн загвараас санаа авч чадамжуудаа өргөжүүлсэн минимал PHP template engine. Энгийн текст-суурьтай темплейтээс эхлээд if / for / macro / filter бүхий хүчирхэг темплейт хүртэл дэмждэг. Гадны хамааралгүй, нэг файлаас ажиллана.',
-                    'en' => 'A minimal PHP template engine whose syntax and design were inspired by Twig during its evolution. It supports everything from simple text placeholders to powerful templates with if / for / macro / filter syntax, with no external dependencies.',
+                    'mn' => 'Хөгжлийн явцад Twig template engine-ийн синтакс, дизайн загвараас санаа авч чадамжуудаа өргөжүүлсэн минимал PHP template engine. Энгийн текст-суурьтай темплейтээс эхлээд if / for / macro / filter бүхий хүчирхэг темплейт хүртэл дэмждэг. 5.0 хувилбараас эхлэн {{ }} бүр анхнаасаа HTML escape хийгддэг (autoescape) тул XSS-ээс хамгаалалттай - жинхэнэ HTML хэвлэхэд |raw шүүлтүүр эсвэл Markup объект ашиглана. Гадны хамааралгүй, нэг файлаас ажиллана.',
+                    'en' => 'A minimal PHP template engine whose syntax and design were inspired by Twig during its evolution. It supports everything from simple text placeholders to powerful templates with if / for / macro / filter syntax. Since 5.0 every {{ }} is HTML-escaped by default (autoescape), so XSS protection no longer depends on remembering |e - real HTML is printed with the |raw filter or a Markup object. No external dependencies.',
                 ],
                 'features' => [
                     'mn' => [
+                        'Autoescape - {{ }} бүр анхнаасаа HTML escape хийгдэнэ (Twig шиг)',
+                        '|raw шүүлтүүр ба Markup объект - жинхэнэ HTML-ээ аюулгүй гэж тэмдэглэх',
+                        'setAutoEscape(false) - и-мэйлийн гарчиг мэтийн энгийн текст темплейтэд',
                         'if / elseif / else, for / else, set, macro бүтцүүд',
                         'Expression parser: ?:, ??, ~, in, not in, starts with, ends with, matches, ternary',
-                        '30+ бэлэн filter: e, date, length, slice, json_encode, merge, replace, number_format ...',
+                        '30+ бэлэн filter: e, raw, date, length, slice, json_encode, merge, replace, number_format ...',
                         'addFilter() / addFunction() - өөрийн filter, function бүртгэх',
                         'Объектын public метод дуудах: {{ user.can("perm") }}',
                         'range(), max(), min(), attribute() функцүүд',
                         'MemoryTemplate (string) ба FileTemplate (файл) хоёр хэлбэр',
                     ],
                     'en' => [
+                        'Autoescape - every {{ }} is HTML-escaped by default (like Twig)',
+                        'The |raw filter and Markup objects mark real HTML as safe',
+                        'setAutoEscape(false) for plain-text templates such as e-mail subjects',
                         'if / elseif / else, for / else, set, macro constructs',
                         'Expression parser: ?:, ??, ~, in, not in, starts with, ends with, matches, ternary',
-                        '30+ built-in filters: e, date, length, slice, json_encode, merge, replace, number_format ...',
+                        '30+ built-in filters: e, raw, date, length, slice, json_encode, merge, replace, number_format ...',
                         'addFilter() / addFunction() - register your own filters and functions',
                         'Object method calls: {{ user.can("perm") }}',
                         'range(), max(), min(), attribute() functions',
@@ -546,12 +560,14 @@ PHP,
                     ],
                 ],
                 'classes' => [
-                    ['MemoryTemplate', ['mn' => 'Бүрэн template engine (if, for, filter, function, macro, expression parser)', 'en' => 'Full template engine (if, for, filter, function, macro, expression parser)']],
+                    ['MemoryTemplate', ['mn' => 'Бүрэн template engine (if, for, filter, function, macro, expression parser, autoescape)', 'en' => 'Full template engine (if, for, filter, function, macro, expression parser, autoescape)']],
                     ['FileTemplate', ['mn' => 'Файлын системээс template уншиж рэндэрлэх (MemoryTemplate-ийг өргөтгөнө)', 'en' => 'File-based template loader (extends MemoryTemplate)']],
+                    ['Markup', ['mn' => 'HTML тэмдэгт мөрийг "аюулгүй" гэж тэмдэглэх Stringable wrapper - escape хийгдэхгүй', 'en' => 'Stringable wrapper marking an HTML string as safe - never escaped']],
                 ],
                 'example' => <<<'PHP'
 use codesaur\Template\MemoryTemplate;
 use codesaur\Template\FileTemplate;
+use codesaur\Template\Markup;
 
 // Бүрэн engine - if, for, filter, function бүгд дэмжинэ
 $page = new MemoryTemplate(
@@ -559,6 +575,18 @@ $page = new MemoryTemplate(
     ['items' => ['a', 'b', 'c']]
 );
 echo $page;
+
+// Autoescape: {{ }} бүр HTML escape хийгдэнэ, HTML хэвлэхэд |raw
+$page = new MemoryTemplate(
+    '<h1>{{ title }}</h1>{{ body|raw }}',
+    ['title' => '<script>alert(1)</script>', 'body' => '<p>Итгэмжлэгдсэн HTML</p>']
+);
+echo $page; // <h1>&lt;script&gt;alert(1)&lt;/script&gt;</h1><p>Итгэмжлэгдсэн HTML</p>
+
+// PHP талаас HTML өгөх бол Markup, энгийн текст темплейт бол autoescape-ийг унтраана
+$page->set('body', new Markup('<b>HTML</b>'));
+$subject = new MemoryTemplate('{{ name }} - захиалга', ['name' => 'Tom & Jerry']);
+$subject->setAutoEscape(false); // и-мэйлийн гарчиг: & нь &amp; болох ёсгүй
 
 // Файл суурьтай template
 $page = new FileTemplate('page.html', [
@@ -638,7 +666,7 @@ PHP,
                 'color' => 'dark',
                 'github' => self::GITHUB_ORG . '/Container',
                 'packagist' => 'https://packagist.org/packages/codesaur/container',
-                'aikido' => 96,
+                'aikido' => 95,
                 'psr' => ['PSR-11'],
                 'requires' => ['PHP 8.2.1+', 'Composer'],
                 'install' => 'composer require codesaur/container',

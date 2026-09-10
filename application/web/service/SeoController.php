@@ -32,7 +32,8 @@ class SeoController extends TemplateController
      * HTML Sitemap хуудсыг харуулах.
      *
      * Хуудсуудыг parent-child бүтэцтэйгээр, мэдээнүүдийг төрлөөр нь
-     * бүлэглэж, бүтээгдэхүүнүүдийг жагсааж харуулна.
+     * бүлэглэж, бүтээгдэхүүнүүдийг жагсааж харуулна. Одоогийн хэлний
+     * бичлэгүүдээс гадна бүх хэлний ('*') бичлэгүүд орно.
      *
      * @return void
      */
@@ -44,7 +45,7 @@ class SeoController extends TemplateController
         $pages_table = (new PagesModel($this->pdo))->getName();
         $stmt = $this->prepare(
             "SELECT id, slug, title, parent_id, position FROM $pages_table
-             WHERE published=1 AND code=:code
+             WHERE published=1 AND code IN (:code, '*')
              ORDER BY position, id"
         );
         $all_pages = $stmt->execute([':code' => $code]) ? $stmt->fetchAll() : [];
@@ -71,7 +72,7 @@ class SeoController extends TemplateController
         $news_table = (new NewsModel($this->pdo))->getName();
         $stmt = $this->prepare(
             "SELECT DISTINCT type FROM $news_table
-             WHERE published=1 AND code=:code"
+             WHERE published=1 AND code IN (:code, '*')"
         );
         $news_types = $stmt->execute([':code' => $code]) ? $stmt->fetchAll(\PDO::FETCH_COLUMN) : [];
 
@@ -80,7 +81,7 @@ class SeoController extends TemplateController
             // Нийт тоог авах
             $countStmt = $this->prepare(
                 "SELECT COUNT(*) FROM $news_table
-                 WHERE published=1 AND code=:code AND type=:type"
+                 WHERE published=1 AND code IN (:code, '*') AND type=:type"
             );
             $countStmt->bindValue(':code', $code);
             $countStmt->bindValue(':type', $type);
@@ -89,7 +90,7 @@ class SeoController extends TemplateController
 
             $stmt = $this->prepare(
                 "SELECT title, slug, published_at FROM $news_table
-                 WHERE published=1 AND code=:code AND type=:type
+                 WHERE published=1 AND code IN (:code, '*') AND type=:type
                  ORDER BY published_at DESC
                  LIMIT 50"
             );
@@ -105,7 +106,7 @@ class SeoController extends TemplateController
         $products_table = (new ProductsModel($this->pdo))->getName();
         $stmt = $this->prepare(
             "SELECT title, slug, published_at FROM $products_table
-             WHERE published=1 AND code=:code
+             WHERE published=1 AND code IN (:code, '*')
              ORDER BY published_at DESC"
         );
         $products = $stmt->execute([':code' => $code]) ? $stmt->fetchAll() : [];
@@ -124,100 +125,125 @@ class SeoController extends TemplateController
      * XML Sitemap үүсгэх (SEO зориулалттай).
      *
      * Бүх хэл дээрх хуудас, мэдээ, бүтээгдэхүүнүүдийг sitemaps.org
-     * стандартын дагуу XML форматаар буцаана.
+     * стандартын дагуу XML форматаар буцаана. Бичлэг бүрийн URL нь өөрийн
+     * хэлний prefix-тэй (default хэл prefix-гүй, бусад нь /xx/ - index.php-ийн
+     * дүрэм), бүх хэлний ('*') бичлэг хэл бүрийн URL-аар орно. Нүүр хуудас
+     * болон порталын статик хуудсууд хэл бүрт нэг URL-тай.
      *
      * @return void
      */
     public function sitemapXml()
     {
-        $baseUrl = (string)$this->getRequest()->getUri()->withPath($this->getScriptPath());
+        $baseUrl = (string)$this->getRequest()->getUri()->withPath($this->getScriptPath())->withQuery('');
         $baseUrl = \rtrim($baseUrl, '/');
+
+        $languages = $this->getLanguages();
+        $default = (string) \key($languages);
+        $prefixes = [];
+        foreach ($languages as $code => $_) {
+            $prefixes[$code] = $code === $default ? '' : "/$code";
+        }
+        // Бичлэгийн code-оос хамаарч URL prefix-үүдийг буцаана ('*' бол бүх хэл)
+        $prefixesFor = fn(string $code): array =>
+            $code === '*' ? $prefixes : [$prefixes[$code] ?? ''];
 
         $urls = [];
 
-        // Нүүр хуудас
-        $urls[] = [
-            'loc' => $baseUrl . '/',
-            'changefreq' => 'daily',
-            'priority' => '1.0'
-        ];
-
-        // codesaur.net портал: Raptor, багцууд, баримт бичиг (статик, DB-гүй)
-        foreach (['/raptor', '/packages', '/docs'] as $path) {
+        // Нүүр хуудас - хэл бүрт
+        foreach ($prefixes as $prefix) {
             $urls[] = [
-                'loc' => $baseUrl . $path,
-                'changefreq' => 'weekly',
-                'priority' => '0.9'
+                'loc' => $baseUrl . $prefix . '/',
+                'changefreq' => 'daily',
+                'priority' => '1.0'
             ];
         }
-        $texts = PortalContent::texts('en');
-        foreach (\array_keys(PortalContent::packages()) as $key) {
-            $urls[] = [
-                'loc' => $baseUrl . '/package/' . $key,
-                'changefreq' => 'weekly',
-                'priority' => '0.8'
-            ];
-            foreach (DocsController::availableDocs($key, 'en', $texts) as $slug => $doc) {
+
+        // codesaur.net портал: Raptor, багцууд, баримт бичиг (статик, DB-гүй).
+        // Порталын агуулга хэл бүр дээр байдаг тул URL бүр нь хэлний prefix-тэй.
+        foreach ($prefixes as $code => $prefix) {
+            foreach (['/raptor', '/packages', '/docs'] as $path) {
                 $urls[] = [
-                    'loc' => $baseUrl . '/docs/' . $key . '/' . $slug,
-                    'lastmod' => \date('Y-m-d', \filemtime($doc['path']) ?: \time()),
-                    'changefreq' => 'monthly',
-                    'priority' => '0.7'
+                    'loc' => $baseUrl . $prefix . $path,
+                    'changefreq' => 'weekly',
+                    'priority' => '0.9'
                 ];
             }
-        }
-
-        // Бүх хэл дээрх хуудсууд
-        $pages_table = (new PagesModel($this->pdo))->getName();
-        $stmt = $this->prepare(
-            "SELECT slug, updated_at FROM $pages_table
-             WHERE published=1
-             ORDER BY published_at DESC"
-        );
-        if ($stmt->execute()) {
-            while ($row = $stmt->fetch()) {
+            $lang = PortalContent::lang($code);
+            $texts = PortalContent::texts($code);
+            foreach (\array_keys(PortalContent::packages()) as $key) {
                 $urls[] = [
-                    'loc' => $baseUrl . '/page/' . $row['slug'],
-                    'lastmod' => \date('Y-m-d', \strtotime($row['updated_at'] ?? 'now')),
-                    'changefreq' => 'monthly',
+                    'loc' => $baseUrl . $prefix . '/package/' . $key,
+                    'changefreq' => 'weekly',
                     'priority' => '0.8'
                 ];
+                foreach (DocsController::availableDocs($key, $lang, $texts) as $slug => $doc) {
+                    $urls[] = [
+                        'loc' => $baseUrl . $prefix . '/docs/' . $key . '/' . $slug,
+                        'lastmod' => \date('Y-m-d', \filemtime($doc['path']) ?: \time()),
+                        'changefreq' => 'monthly',
+                        'priority' => '0.7'
+                    ];
+                }
             }
         }
 
-        // Бүх хэл дээрх мэдээнүүд
+        // Хуудсууд
+        $pages_table = (new PagesModel($this->pdo))->getName();
+        $stmt = $this->prepare(
+            "SELECT slug, code, updated_at FROM $pages_table
+             WHERE published=1
+             ORDER BY published_at DESC"
+        );
+        if ($stmt->execute()) {
+            while ($row = $stmt->fetch()) {
+                foreach ($prefixesFor((string) $row['code']) as $prefix) {
+                    $urls[] = [
+                        'loc' => $baseUrl . $prefix . '/page/' . $row['slug'],
+                        'lastmod' => \date('Y-m-d', \strtotime($row['updated_at'] ?? 'now')),
+                        'changefreq' => 'monthly',
+                        'priority' => '0.8'
+                    ];
+                }
+            }
+        }
+
+        // Мэдээнүүд
         $news_table = (new NewsModel($this->pdo))->getName();
         $stmt = $this->prepare(
-            "SELECT slug, updated_at FROM $news_table
+            "SELECT slug, code, updated_at FROM $news_table
              WHERE published=1
              ORDER BY published_at DESC"
         );
         if ($stmt->execute()) {
             while ($row = $stmt->fetch()) {
-                $urls[] = [
-                    'loc' => $baseUrl . '/news/' . $row['slug'],
-                    'lastmod' => \date('Y-m-d', \strtotime($row['updated_at'] ?? 'now')),
-                    'changefreq' => 'monthly',
-                    'priority' => '0.6'
-                ];
+                foreach ($prefixesFor((string) $row['code']) as $prefix) {
+                    $urls[] = [
+                        'loc' => $baseUrl . $prefix . '/news/' . $row['slug'],
+                        'lastmod' => \date('Y-m-d', \strtotime($row['updated_at'] ?? 'now')),
+                        'changefreq' => 'monthly',
+                        'priority' => '0.6'
+                    ];
+                }
             }
         }
 
-        // Бүх хэл дээрх бүтээгдэхүүнүүд
+        // Бүтээгдэхүүнүүд
         $products_table = (new ProductsModel($this->pdo))->getName();
         $stmt = $this->prepare(
-            "SELECT slug, updated_at FROM $products_table
+            "SELECT slug, code, updated_at FROM $products_table
              WHERE published=1
              ORDER BY published_at DESC"
         );
         if ($stmt->execute()) {
             while ($row = $stmt->fetch()) {
-                $urls[] = [
-                    'loc' => $baseUrl . '/product/' . $row['slug'],
-                    'lastmod' => \date('Y-m-d', \strtotime($row['updated_at'] ?? 'now')),
-                    'changefreq' => 'weekly',
-                    'priority' => '0.7'
-                ];
+                foreach ($prefixesFor((string) $row['code']) as $prefix) {
+                    $urls[] = [
+                        'loc' => $baseUrl . $prefix . '/product/' . $row['slug'],
+                        'lastmod' => \date('Y-m-d', \strtotime($row['updated_at'] ?? 'now')),
+                        'changefreq' => 'weekly',
+                        'priority' => '0.7'
+                    ];
+                }
             }
         }
 
@@ -245,14 +271,16 @@ class SeoController extends TemplateController
      * RSS Feed үүсгэх.
      *
      * Сүүлийн 20 мэдээ болон 20 бүтээгдэхүүнийг RSS 2.0 стандартаар
-     * буцаана. Atom namespace ашиглана.
+     * буцаана. Atom namespace ашиглана. Одоогийн хэлний бичлэгүүдээс
+     * гадна бүх хэлний ('*') бичлэгүүд орно.
      *
      * @return void
      */
     public function rss()
     {
         $code = $this->getLanguageCode();
-        $baseUrl = (string)$this->getRequest()->getUri()->withPath($this->getScriptPath());
+        // Feed-ийн холбоосууд тухайн хэлний URL prefix-тэй (mount path) байна
+        $baseUrl = (string)$this->getRequest()->getUri()->withPath($this->getScriptPath() . $this->getMountPath())->withQuery('');
         $baseUrl = \rtrim($baseUrl, '/');
 
         // Site settings
@@ -265,7 +293,7 @@ class SeoController extends TemplateController
         $stmt = $this->prepare(
             "SELECT title, slug, description, photo, published_at, 'news' as feed_type
              FROM $news_table
-             WHERE published=1 AND code=:code
+             WHERE published=1 AND code IN (:code, '*')
              ORDER BY published_at DESC
              LIMIT 20"
         );
@@ -276,7 +304,7 @@ class SeoController extends TemplateController
         $stmt = $this->prepare(
             "SELECT title, slug, description, photo, published_at, 'product' as feed_type
              FROM $products_table
-             WHERE published=1 AND code=:code
+             WHERE published=1 AND code IN (:code, '*')
              ORDER BY published_at DESC
              LIMIT 20"
         );

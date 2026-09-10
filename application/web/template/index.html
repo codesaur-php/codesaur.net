@@ -14,6 +14,10 @@
         {% endif %}
         {% if apple_touch_icon is not empty %}<link rel="apple-touch-icon" href="{{ apple_touch_icon }}">{% endif %}
         <link rel="alternate" type="application/rss+xml" title="{{ title }} RSS" href="{{ 'rss'|link }}">
+        <!-- SEO: canonical + hreflang. Variables: canonical_url, hreflang_urls (TemplateController::localizedUrls) -->
+        <link rel="canonical" href="{{ canonical_url|e }}">
+        {% for hreflang,url in hreflang_urls %}<link rel="alternate" hreflang="{{ hreflang }}" href="{{ url|e }}">
+        {% endfor %}
         <meta property="og:type" content="{{ record_title is not empty ? 'article' : 'website' }}">
         <meta property="og:site_name" content="{{ title|e }}">
         <meta property="og:title" content="{{ (record_title ?? title)|e }}">
@@ -78,10 +82,12 @@
                     {% if config['youtube'] is not empty %}
                         <li><a href="{{ config['youtube'] }}" target="_blank" rel="noopener" title="YouTube"><i class="bi bi-youtube"></i><span class="tc-menu-label d-lg-none ms-2">YouTube</span></a></li>
                     {% endif %}
+                    <!-- Хэлний сонголт: холбоос бүр одоо байгаа хуудсыг тухайн хэлний
+                         URL prefix-тэй нээнэ (language_urls - TemplateController::localizedUrls) -->
                     {% if localization.language|length > 1 %}
                         {% for code,language in localization.language %}
                             {% set flag = code == 'en' ? 'us' : code %}
-                            <li class="tc-menu-lang"><a class="{{ code == lang ? 'active' : '' }}" href="{{ 'language'|link({'code': code}) }}" title="{{ language['title'] }}"><img class="tc-flag" src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15" alt="{{ language['title'] }}"><span class="tc-menu-label">{{ code|upper }}</span></a></li>
+                            <li class="tc-menu-lang"><a class="{{ code == lang ? 'active' : '' }}" href="{{ language_urls[code]|e }}" hreflang="{{ code }}" title="{{ language['title'] }}"><img class="tc-flag" src="https://flagcdn.com/20x15/{{ flag }}.png" srcset="https://flagcdn.com/40x30/{{ flag }}.png 2x" width="20" height="15" alt="{{ language['title'] }}"><span class="tc-menu-label">{{ code|upper }}</span></a></li>
                         {% endfor %}
                     {% endif %}
                     <li class="tc-menu-search">

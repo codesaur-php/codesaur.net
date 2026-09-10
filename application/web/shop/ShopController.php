@@ -44,8 +44,8 @@ class ShopController extends TemplateController
     /**
      * Бүтээгдэхүүний жагсаалтыг харуулах.
      *
-     * Сонгосон хэл дээрх нийтлэгдсэн бүх бүтээгдэхүүнийг
-     * огноогоор буурахаар эрэмбэлж харуулна.
+     * Сонгосон хэл дээрх (болон бүх хэлний '*') нийтлэгдсэн бүх
+     * бүтээгдэхүүнийг огноогоор буурахаар эрэмбэлж харуулна.
      *
      * @return void
      */
@@ -62,7 +62,7 @@ class ShopController extends TemplateController
                  SELECT product_id, AVG(rating) as avg_rating, COUNT(*) as review_count
                  FROM $reviewsTable GROUP BY product_id
              ) rv ON rv.product_id=p.id
-             WHERE p.published=1 AND p.code=:code
+             WHERE p.published=1 AND p.code IN (:code, '*')
              ORDER BY p.published_at DESC"
         );
         $products = $stmt->execute([':code' => $code]) ? $stmt->fetchAll() : [];

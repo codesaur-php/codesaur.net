@@ -319,7 +319,7 @@ public function process($request, $handler): ResponseInterface
 `Dashboard\SessionMiddleware` is shared by both apps. Constructor accepts a `needsWrite` closure. All other routes call `session_write_close()` early for concurrency.
 
 - **Dashboard**: checks for `/login` path or empty CSRF token (to allow first-time token generation)
-- **Web**: checks for `/session/` prefix - all routes that write to `$_SESSION` use `/session/` prefix (e.g., `/session/language/{code}`, `/session/contact-send`, `/session/order`)
+- **Web**: checks for `/session/` prefix - all routes that write to `$_SESSION` use `/session/` prefix (e.g., `/session/contact-send`, `/session/order`). The closure strips a leading language prefix (`/en/session/...`) before the check, because SessionMiddleware runs before the mount path is known
 
 When adding a new Web route that writes to `$_SESSION`, register it with `/session/` prefix in `WebRouter.php`. No need to modify `Application.php`.
 
@@ -370,7 +370,19 @@ When adding new modules: keep using `method="PUT"` forms + `csrfFetch()`; tunnel
 
 ### LocalizationMiddleware
 
-`Dashboard\Localization\LocalizationMiddleware` is shared. Constructor accepts session key. Controllers read `$this->getAttribute('localization')['session_key']` to write language to session without hardcoding.
+`Dashboard\Localization\LocalizationMiddleware` is shared. Constructor accepts a nullable session key. Controllers read `$this->getAttribute('localization')['session_key']` to write language to session without hardcoding (`setLanguageCode()` is a no-op when the key is null).
+
+Resolution order: `language_prefix` request attribute -> session (only with a session key) -> default language (first active language). Dashboard uses the session (`RAPTOR_LANGUAGE_CODE`); Web passes `null` and takes the language from the URL only.
+
+### Web Language URL Prefix
+
+The public web language is part of the URL so every language is crawlable: the default language has no prefix (`/news/x`), every other active language is prefixed with its code (`/en/news/x`). `public_html/index.php` matches `^/([a-z]{2})(?=/|$)`, mounts `Web\Application` on `/{code}` and sets the `language_prefix` attribute; LocalizationMiddleware validates it (inactive code -> 404). Because the prefix is the mount path, routers stay prefix-naive and `|link` / `generateRouteLink()` prepend it automatically - do not hardcode `/en` anywhere. Consequences:
+
+- Never register a web route whose first segment is exactly two lowercase letters - it would be taken as a language prefix. (The portal's own routes - `raptor`, `packages`, `package`, `docs` - are all longer, and so must any new one be.)
+- `TemplateController::webTemplate()` computes `language_urls` (current page per language, used by the layout's language dropdown), `hreflang_urls` (only for pages that exist in every language: lists, home, `code='*'` records; empty for a single-language record so no missing translation is announced) and `canonical_url` (self URL; for `code='*'` records the default-language URL). `index.html` emits `<link rel="canonical">` and the `hreflang` set - keep them when redesigning the layout.
+- `SeoController::sitemapXml()` lists each record under its own language prefix (`*` records under every language), and the home page plus every static portal page (`/raptor`, `/packages`, `/package/{key}`, `/docs/{key}/{doc}`) once per language; `rss()` links carry the current prefix.
+- `/session/language/{code}` only redirects to that language's home (kept for old links); it writes nothing to the session.
+- Page `link` fields that hold a local path (`/about`) are not prefixed - use a page slug or an absolute URL instead.
 
 ## Database
 
@@ -467,6 +479,16 @@ For touching the sensitive table list, see `MigrationSecurityScanner::SENSITIVE_
 - **Users, Organizations, Signup** use soft delete (`deactivateById`, `is_active=0`) with optional hard delete for deactivated records
 - **Forgot (password reset tokens)** are consumed with `deactivateById` (`is_active=0`) on successful reset - never deleted, so the admin requests modal can show the `used` state alongside `expired`/`ready`. Token lookups in `LoginController` (`forgotPassword()`, `setPassword()`) and the resend cooldown must always filter `is_active=1` - a used token is invalid
 - **All other models** use hard delete (`deleteById`) directly. Deleted data is preserved in the `trash` table via `TrashModel::store()` before deletion
+
+### Language-neutral Records (`code = '*'`)
+
+News, Pages and Products are flat single-language rows (one record per `code`), not `LocalizedModel`. A record whose `code` is the sentinel `'*'` is language-neutral and shows on every language of the public site (Joomla `language='*'` / TYPO3 "All languages" convention). Rules:
+
+- Every web-side query that filters by language MUST use `code IN (:code, '*')`, never a bare `code=:code` - a forgotten spot silently hides `*` records from that list (guarded by `tests/Unit/Web/LanguageNeutralRecordsTest.php`; add new files there when a new module filters by `code`).
+- A `*` record must not become `<html lang="*">`: `Web\Template\TemplateController::webTemplate()` skips mapping `code='*'` to `record_code`, so the layout falls back to the current site language.
+- Pages tree: a parent must share the child's `code` or be `*` (`PagesController::isParentCodeCompatible()`, mirrored by `filterParentsByCode()` in `page-insert.html`). A `*` child under a single-language parent would be orphaned in the other languages' navigation. The rule is enforced in both directions: insert/update check the chosen parent (upward), and update also checks direct children when `code` changes (downward, `change-child-pages-language-first` error) - a language change that would orphan children is rejected instead of silently hiding them.
+- Dashboard UI: the language dropdown offers "All languages" (`all-languages` text keyword) as the last item; wherever a flag is rendered from `code`, branch on `'*'` and show `<i class="bi bi-globe2">` instead of a flagcdn image (which has no `*` flag). Index filter builders must not index `$languages[$row['code']]` without a `'*'` branch.
+- The sentinel is stored literally in the `code` column (`varchar(2)`, fits) - no schema change, no migration.
 
 ## Cache
 

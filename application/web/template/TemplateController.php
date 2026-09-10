@@ -49,7 +49,7 @@ class TemplateController extends \Dashboard\Controller
      *
      * SEO meta автомат map:
      *   $vars['title']       -> index-д `record_title` болно
-     *   $vars['code']        -> index-д `record_code` болно
+     *   $vars['code']        -> index-д `record_code` болно ('*' бол алгасна)
      *   $vars['description'] -> index-д `record_description` болно
      *   $vars['photo']       -> index-д `record_photo` болно
      *   $vars['layout']      -> 'portal' бол index контентыг default dialog-оор ороохгүй
@@ -71,10 +71,12 @@ class TemplateController extends \Dashboard\Controller
         $content->addFilter('basename', fn(string $path): string => \rawurldecode(\basename($path)));
         $index->set('content', $content);
 
-        // SEO meta: $vars дотроос index layout руу автоматаар map хийх
+        // SEO meta: $vars дотроос index layout руу автоматаар map хийх.
+        // Бүх хэлний ('*') бичлэгийн code-ийг дамжуулахгүй - <html lang="*">
+        // хүчингүй тул layout одоогийн хэлний code-оо хэрэглэнэ.
         $metaKeys = ['title' => 'record_title', 'code' => 'record_code', 'description' => 'record_description', 'photo' => 'record_photo'];
         foreach ($metaKeys as $key => $indexKey) {
-            if (isset($vars[$key]) && $vars[$key] !== '') {
+            if (isset($vars[$key]) && $vars[$key] !== '' && $vars[$key] !== '*') {
                 $index->set($indexKey, $vars[$key]);
             }
         }
@@ -96,6 +98,12 @@ class TemplateController extends \Dashboard\Controller
             . ($uri->getPort() && !\in_array($uri->getPort(), [80, 443]) ? ':' . $uri->getPort() : '');
         $index->set('base_url', $baseUrl);
         $index->set('current_url', (string) $uri);
+
+        // Хэл бүрийн URL (language_urls, hreflang_urls) + canonical
+        $recordCode = $vars['code'] ?? '';
+        foreach ($this->localizedUrls($recordCode, $baseUrl) as $key => $value) {
+            $index->set($key, $value);
+        }
 
         // System settings (favicon, SEO, branding...)
         $settings = $this->getAttribute('settings', []);
@@ -136,5 +144,73 @@ class TemplateController extends \Dashboard\Controller
         $index->set('featured_pages', $featuredPages);
 
         return $index;
+    }
+
+    /**
+     * Одоогийн хуудасны хэл бүрийн URL болон SEO холбоосуудыг тооцоолох.
+     *
+     * Вэбийн хэл URL prefix-ээр тодорхойлогддог (index.php: default хэл
+     * prefix-гүй, бусад нь /xx/). Энд одоогийн замаас script path болон mount
+     * prefix-ийг зүсээд хэл бүрийн хувилбарыг үүсгэнэ:
+     *
+     *  - language_urls  ['mn' => '/news/x', 'en' => '/en/news/x'] - layout-ын
+     *    хэлний dropdown. Тодорхой нэг хэлтэй бичлэгийн хуудсанд (code нь хэлний
+     *    код, '*' биш) өөр хэлний хувилбар байхгүй тул бусад хэл нь тухайн
+     *    хэлний нүүр рүү заана.
+     *  - hreflang_urls  ['mn' => 'https://.../news/x', 'en' => ..., 'x-default' => ...]
+     *    - зөвхөн бүх хэл дээр байдаг хуудсанд (жагсаалт, нүүр, code='*' бичлэг).
+     *    Нэг хэлтэй бичлэгт хоосон - байхгүй орчуулгыг hreflang-аар зарлахгүй.
+     *  - canonical_url  одоогийн хэлний URL. code='*' бичлэг хэл бүрийн URL дээр
+     *    адилхан контенттой тул default хэлний URL-ийг canonical болгоно.
+     *
+     * @param string $recordCode Рендерлэж буй бичлэгийн code ('' бол бичлэг биш хуудас)
+     * @param string $baseUrl    scheme://host[:port]
+     * @return array language_urls, hreflang_urls, canonical_url
+     */
+    private function localizedUrls(string $recordCode, string $baseUrl): array
+    {
+        $languages = $this->getLanguages();
+        $default = (string) \key($languages);
+        $current = $this->getLanguageCode();
+        $uri = $this->getRequest()->getUri();
+
+        // Script path + mount prefix-гүй "цэвэр" зам (жишээ: /news/x)
+        $scriptPath = $this->getScriptPath();
+        $path = \rawurldecode($uri->getPath());
+        if ($scriptPath !== '' && \str_starts_with($path, $scriptPath)) {
+            $path = \substr($path, \strlen($scriptPath));
+        }
+        $mount = $this->getMountPath();
+        if ($mount !== '' && \str_starts_with($path, $mount)) {
+            $path = \substr($path, \strlen($mount));
+        }
+        $path = '/' . \ltrim($path, '/');
+        $query = $uri->getQuery() !== '' ? '?' . $uri->getQuery() : '';
+
+        $isFixedLanguage = $recordCode !== '' && $recordCode !== '*';
+        $languageUrls = [];
+        foreach ($languages as $code => $_) {
+            $prefix = $code === $default ? '' : "/$code";
+            $languageUrls[$code] = $isFixedLanguage && $code !== $current
+                ? $scriptPath . $prefix . '/'
+                : $scriptPath . $prefix . $path . $query;
+        }
+
+        $hreflangUrls = [];
+        if (!$isFixedLanguage) {
+            foreach ($languageUrls as $code => $url) {
+                $hreflangUrls[$code] = $baseUrl . $url;
+            }
+            $hreflangUrls['x-default'] = $baseUrl . $languageUrls[$default];
+        }
+
+        $canonicalCode = $recordCode === '*' ? $default : $current;
+        $canonicalUrl = $baseUrl . ($languageUrls[$canonicalCode] ?? $languageUrls[$default]);
+
+        return [
+            'language_urls' => $languageUrls,
+            'hreflang_urls' => $hreflangUrls,
+            'canonical_url' => $canonicalUrl
+        ];
     }
 }

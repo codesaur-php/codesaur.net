@@ -61,3 +61,44 @@ jobs:
 
       - name: Verify autoload
         run: composer dump-autoload --optimize --strict-psr
+
+  # --------------------------------------------------------------------
+  # Promote - шалгалт давсан main commit-ийг `production` салбар руу шилжүүлнэ.
+  # Сервер (компанийн VPN дотор, гаднаас хүрэхгүй) энэ салбарыг минут тутам
+  # SSH deploy key-ээр татаж release хэлбэрээр deploy хийнэ.
+  # force=false: зөвхөн fast-forward - хожуу дууссан хуучин CI шинэ commit-ийг
+  # буцааж дарахгүй.
+  #
+  # Critical (English): production must only move forward to a commit whose
+  # checks passed. Keep force=false so a slower, older run can never roll the
+  # branch back over a newer promoted commit.
+  # --------------------------------------------------------------------
+  promote:
+    name: Promote to production
+    needs: validate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: promote-production
+      cancel-in-progress: false
+
+    steps:
+      - name: Fast-forward production branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -u
+          if gh api "repos/$REPO/git/ref/heads/production" >/dev/null 2>&1; then
+            if gh api -X PATCH "repos/$REPO/git/refs/heads/production" -f sha="$SHA" -F force=false >/dev/null 2>err.txt; then
+              echo "production -> $SHA"
+            else
+              echo "::warning::production was not moved to $SHA (not a fast-forward): $(cat err.txt)"
+            fi
+          else
+            gh api -X POST "repos/$REPO/git/refs" -f ref=refs/heads/production -f sha="$SHA" >/dev/null
+            echo "production created at $SHA"
+          fi

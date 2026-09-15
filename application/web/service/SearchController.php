@@ -146,7 +146,7 @@ class SearchController extends TemplateController
      *
      * Индексийг PortalSearch бүтээх бөгөөд PortalContent (PHP массив) болон
      * багцуудын markdown файлаас л бүтдэг тул кэшлэгдэнэ. Индексийг зөвхөн
-     * deploy цэвэрлэдэг (scripts/deploy.ps1 нь cache/*.cache-г устгадаг) -
+     * deploy цэвэрлэдэг (серверийн deploy.sh нь cache/*.cache-г устгадаг) -
      * контент нь deploy-ээс өөр замаар өөрчлөгддөггүй учраас.
      *
      * Coupling (English): this cache entry has no explicit invalidation -

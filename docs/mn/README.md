@@ -278,9 +278,9 @@ Repo-д анхнаасаа орсон default workflow. Push болон pull req
 
 #### Deploy (`.github/workflows/deploy.yml`)
 
-Нэгдсэн deploy workflow, 3 job-той: **FTP**, **SSH**, болон **Windows Server self-hosted runner**. Job бүр зөвхөн шаардлагатай secrets/variables тохируулсан үед ажиллана. Тохируулсан бүх job-ууд зэрэг (parallel) ажиллана.
+Нэгдсэн deploy workflow, 2 job-той: **FTP** ба **SSH**. Job бүр зөвхөн шаардлагатай secrets/variables тохируулсан үед ажиллана. Тохируулсан бүх job-ууд зэрэг (parallel) ажиллана.
 
-Доорх **A / B / C** нь энэ workflow-ийн job-ууд бөгөөд shared hosting, VPS, cloud VM, dedicated, Windows Server гээд бараг бүх орчныг хамарна. **D** нь workflow-оос гаднах, зөвхөн A/B/C-гийн аль нь ч сервер лүү хүрч чадахгүй онцгой орчны fallback.
+Доорх **A / B** нь энэ workflow-ийн job-ууд бөгөөд shared hosting, VPS, cloud VM, dedicated гээд бараг бүх орчныг хамарна. **C** нь workflow-оос гаднах, зөвхөн A/B-гийн аль нь ч сервер лүү хүрч чадахгүй онцгой орчны fallback.
 
 **Ажиллах дараалал:**
 
@@ -314,23 +314,9 @@ SSH хандалттай Linux серверт (VPS, cloud VM, dedicated). **Sett
 | `SSH_DEPLOY_DIR` | Серверийн зорьсон хавтас | `/var/www/myproject` |
 | `SSH_PORT` | (заавал биш) SSH порт, анхдагч: 22 | `22` |
 
-**C) Windows Self-hosted Runner Deploy**
+**C) cPanel Git Deploy (fallback - зөвхөн A/B-гийн аль нь ч боломжгүй үед)**
 
-1. Windows Server дээр self-hosted runner суулгах:
-   - **Settings -> Actions -> Runners -> New self-hosted runner -> Windows**
-   - Runner-г Windows service болгон бүртгэж, сервер restart хийхэд автомат асдаг болгоно
-
-2. **Settings -> Secrets and variables -> Actions -> Variables** хэсэгт дараах variable нэмнэ:
-
-| Variable | Тайлбар | Жишээ |
-|----------|---------|-------|
-| `DEPLOY_PATH` | Серверийн project хавтас | `C:\xampp\htdocs\myproject` |
-
-3. PHP болон Composer серверийн system PATH-д байх ёстой.
-
-**D) cPanel Git Deploy (fallback - зөвхөн A/B/C-гийн аль нь ч боломжгүй үед)**
-
-Дээрх гурван зам бол стандарт бөгөөд cPanel хосттой байлаа ч гэсэн FTP (A) эсвэл
+Дээрх хоёр зам бол стандарт бөгөөд cPanel хосттой байлаа ч гэсэн FTP (A) эсвэл
 SSH (B) хандалт нээлттэй л бол тэдгээрийг ашиглана - cPanel дээр байршсан гэдэг
 нь дангаараа энэ D замыг сонгох шалтгаан биш.
 

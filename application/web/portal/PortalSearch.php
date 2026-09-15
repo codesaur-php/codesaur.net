@@ -17,7 +17,7 @@ namespace Web\Portal;
  * Индекс нь зөвхөн уншдаг өгөгдлөөс (PHP массив + markdown файл) бүтэх
  * тул хүсэлт бүрт дахин бүтээхгүйгээр кэшлэгдэнэ - PortalContent засвар
  * болон markdown файлын өөрчлөлт хоёулаа deploy-ээр л ирдэг бөгөөд
- * deploy нь cache/*.cache-г цэвэрлэдэг (scripts/deploy.ps1).
+ * deploy нь cache/*.cache-г цэвэрлэдэг (серверийн deploy.sh).
  *
  * Coupling (English): the cached index is invalidated ONLY by the deploy
  * script clearing cache/*.cache. If you ever change PortalContent or the

@@ -33,31 +33,15 @@
 #     SSH_DEPLOY_DIR - Серверийн зорьсон хавтас (жишээ: /var/www/myproject)
 #     SSH_PORT       - (заавал биш) SSH порт, анхдагч: 22
 #
-# ----------------------------------------------------------------------
-# C) Windows Self-hosted Runner Deploy
-# ----------------------------------------------------------------------
-#   Windows Server дээр GitHub Actions self-hosted runner суулгах:
-#     GitHub repo -> Settings -> Actions -> Runners -> New self-hosted runner
-#     1. Windows сонгоно
-#     2. Заавар дагаж runner татаж суулгана
-#     3. Runner-г Windows service болгон бүртгэнэ:
-#        ./svc.sh install
-#        ./svc.sh start
-#     4. Runner дээр PHP, Composer PATH-д байх ёстой
-#
-#   GitHub repo -> Settings -> Secrets and variables -> Actions -> Variables:
-#     DEPLOY_PATH - Серверийн project хавтас
-#                   (жишээ: C:\xampp\htdocs\myproject)
-#
 # Тэмдэглэл:
 #   - .env файл серверт гараар үүсгэж тохируулна (deploy хийгдэхгүй)
 #   - Runtime хавтаснууд (cache/, logs/, protected/, public_html/public/,
 #     database/migrations/) guard файлуудтайгаа (.htaccess г.м.) deploy
 #     хийгдэж серверт үүснэ, харин доторх runtime агуулгад нь (кэш, лог,
 #     upload файл, migration SQL) deploy халдахгүй - устгахгүй, дарахгүй.
-#     Гурван арга үүнийг өөр өөр механизмаар хангадаг тул exclude
+#     Хоёр арга үүнийг өөр өөр механизмаар хангадаг тул exclude
 #     жагсаалтууд нь хоорондоо ижил биш байгаа нь зориудынх.
-#   - Олон deploy зэрэг тохируулж болно (жишээ: staging = Windows,
+#   - Хоёуланг нь зэрэг тохируулж болно (жишээ: staging = FTP,
 #     production = SSH) - тус тусдаа ажиллана
 # ======================================================================
 
@@ -210,46 +194,3 @@ jobs:
           script: |
             cd ${{ secrets.SSH_DEPLOY_DIR }}
             composer dump-autoload --optimize --no-interaction
-
-  # ====================================================================
-  # C) Windows Self-hosted Runner Deploy
-  # ====================================================================
-  windows-server:
-    name: Deploy to Windows Server
-    runs-on: [self-hosted, windows]
-    if: ${{ github.event.workflow_run.conclusion == 'success' && vars.DEPLOY_PATH != '' }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v6
-
-      # Runtime хавтаснуудыг (cache, logs, protected, public_html\public,
-      # database\migrations) /XD-д эх болон зорьсон талын бүтэн замаар нь
-      # хослуулж өгнө: эх талынх нь transfer-ээс, зорьсон талынх нь /MIR-ийн
-      # устгалтаас хамгаална. Нүцгэн нэр ашиглаж болохгүй - robocopy нэрээр
-      # мод даяар таардаг тул application доторх ижил нэртэй хавтас хамт хасагдана.
-      # Дараагийн жижиг robocopy-нууд (/MIR-гүй, юу ч устгадаггүй)
-      # guard файлуудыг хуулж хавтаснуудыг серверт үүсгэнэ.
-      - name: Sync files to deploy path
-        shell: cmd
-        run: |
-          robocopy "%GITHUB_WORKSPACE%" "${{ vars.DEPLOY_PATH }}" /MIR /XD .git .github docs tests nbproject "%GITHUB_WORKSPACE%\cache" "%GITHUB_WORKSPACE%\logs" "%GITHUB_WORKSPACE%\protected" "%GITHUB_WORKSPACE%\public_html\public" "%GITHUB_WORKSPACE%\database\migrations" "${{ vars.DEPLOY_PATH }}\cache" "${{ vars.DEPLOY_PATH }}\logs" "${{ vars.DEPLOY_PATH }}\protected" "${{ vars.DEPLOY_PATH }}\public_html\public" "${{ vars.DEPLOY_PATH }}\database\migrations" /XF .env .env.* phpunit.xml error_log /NFL /NDL /NJH /NJS /R:3 /W:5
-          if %ERRORLEVEL% GTR 7 exit /b 1
-          robocopy "%GITHUB_WORKSPACE%\cache" "${{ vars.DEPLOY_PATH }}\cache" .htaccess /NJH /NJS /R:3 /W:5
-          if %ERRORLEVEL% GTR 7 exit /b 1
-          robocopy "%GITHUB_WORKSPACE%\logs" "${{ vars.DEPLOY_PATH }}\logs" .htaccess /NJH /NJS /R:3 /W:5
-          if %ERRORLEVEL% GTR 7 exit /b 1
-          robocopy "%GITHUB_WORKSPACE%\protected" "${{ vars.DEPLOY_PATH }}\protected" .htaccess /NJH /NJS /R:3 /W:5
-          if %ERRORLEVEL% GTR 7 exit /b 1
-          robocopy "%GITHUB_WORKSPACE%\public_html\public" "${{ vars.DEPLOY_PATH }}\public_html\public" .htaccess /NJH /NJS /R:3 /W:5
-          if %ERRORLEVEL% GTR 7 exit /b 1
-          robocopy "%GITHUB_WORKSPACE%\database\migrations" "${{ vars.DEPLOY_PATH }}\database\migrations" .gitkeep README.md /NJH /NJS /R:3 /W:5
-          if %ERRORLEVEL% GTR 7 exit /b 1
-          exit /b 0
-
-      - name: Install/update production dependencies
-        shell: cmd
-        working-directory: ${{ vars.DEPLOY_PATH }}
-        run: |
-          composer update --no-dev --optimize-autoloader --no-interaction
-          composer dump-autoload --optimize

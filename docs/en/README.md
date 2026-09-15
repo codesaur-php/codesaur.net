@@ -278,9 +278,9 @@ Default workflow included in the repository. Runs code quality checks on every p
 
 #### Deploy (`.github/workflows/deploy.yml`)
 
-Unified deploy workflow with 3 jobs: **FTP**, **SSH**, and **Windows Server self-hosted runner**. Each job runs only when its required secrets/variables are configured. All configured jobs run in parallel.
+Unified deploy workflow with 2 jobs: **FTP** and **SSH**. Each job runs only when its required secrets/variables are configured. All configured jobs run in parallel.
 
-**A / B / C** below are jobs of this workflow and cover virtually every environment - shared hosting, VPS, cloud VM, dedicated, Windows Server. **D** is outside the workflow: a fallback used only when none of A/B/C can reach the server.
+**A / B** below are jobs of this workflow and cover virtually every environment - shared hosting, VPS, cloud VM, dedicated. **C** is outside the workflow: a fallback used only when neither A nor B can reach the server.
 
 **Execution flow:**
 
@@ -314,23 +314,9 @@ For Linux servers with SSH access (VPS, cloud VM, dedicated). Add the following 
 | `SSH_DEPLOY_DIR` | Target directory on server | `/var/www/myproject` |
 | `SSH_PORT` | (optional) SSH port, default: 22 | `22` |
 
-**C) Windows Self-hosted Runner Deploy**
+**C) cPanel Git Deploy (fallback - only when neither A nor B can reach the server)**
 
-1. Install a self-hosted runner on your Windows Server:
-   - **Settings -> Actions -> Runners -> New self-hosted runner -> Windows**
-   - Register the runner as a Windows service for auto-start
-
-2. Add the following variable in **Settings -> Secrets and variables -> Actions -> Variables**:
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DEPLOY_PATH` | Server project directory | `C:\xampp\htdocs\myproject` |
-
-3. Ensure PHP and Composer are in the system PATH on the server.
-
-**D) cPanel Git Deploy (fallback - only when none of A/B/C can reach the server)**
-
-The three paths above are the standard ones. Being hosted on cPanel does NOT by
+The two paths above are the standard ones. Being hosted on cPanel does NOT by
 itself mean you need this path - if the host offers FTP (A) or SSH (B) access,
 use those.
 

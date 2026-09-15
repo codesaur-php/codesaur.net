@@ -6,7 +6,7 @@ The official portal of the codesaur-php ecosystem (Raptor framework and all pack
 - Портал модуль / Portal module: `application/web/portal/` (`Web\Portal`) - Raptor, багцууд, баримт бичиг (`/raptor`, `/packages`, `/package/{key}`, `/docs/{key}/{doc}`)
 - Баримт бичиг `vendor/codesaur/*/docs/` болон төслийн `docs/` дахь markdown файлуудаас шууд рендерлэгдэнэ - `composer update` хийхэд автоматаар шинэчлэгдэнэ
 - Загвар / Theme: Turbo C IDE (`public_html/assets/portal/`)
-- Deploy: Windows сервер, GitHub webhook -> `git pull` - [DEPLOY.md](DEPLOY.md)
+- Deploy: Ubuntu сервер, CI -> `production` салбар -> сервер минут тутам татна (pull-based, health check амжилтгүй бол автомат rollback)
 
 Доорх нь Raptor framework-ийн ерөнхий танилцуулга. / Below is the general Raptor framework introduction.
 

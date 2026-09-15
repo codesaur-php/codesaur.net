@@ -42,3 +42,6 @@
 # үүсдэг. Git clone-ийн working tree-г бохирлож, cPanel deploy-г
 # "uncommitted changes"-ээр блокдог тул ignore хийнэ.
 error_log
+
+# Claude Code-ийн локал тохиргоо - машин тус бүрт өөр, git-д оруулахгүй
+/.claude/

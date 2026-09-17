@@ -60,7 +60,7 @@ use Psr\Http\Message\ResponseInterface;
  * Router бүртгэх
  * ---------------------------------------------------------
  * `WebRouter` - вэбийн үндсэн хуудсуудын маршрут
- *    / -> /home, news, language гэх мэт
+ *    / (нүүр), news, page, contact, language гэх мэт
  * `Portal\PortalRouter` - codesaur.net порталын маршрут
  *    /raptor, /packages, /package/{key}, /docs/{key}/{doc}
  *

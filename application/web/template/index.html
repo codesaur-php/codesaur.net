@@ -102,8 +102,9 @@
 
         <!-- Content -->
         <main class="tc-screen" id="content">
+            <!-- urgent, copyright - settings-ийн HTML зөвшөөрдөг талбарууд, |raw-аар хэвлэнэ -->
             {% if urgent is not null and urgent is not empty %}
-                <div class="tc-alert"><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ urgent }}</div>
+                <div class="tc-alert"><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ urgent|raw }}</div>
             {% endif %}
             {% if layout is defined and layout == 'portal' %}
                 {{ content }}

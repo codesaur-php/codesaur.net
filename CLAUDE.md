@@ -30,8 +30,8 @@ application/
   web/             # Public website application
 public_html/       # Document root (index.php entry point, assets/)
 database/
-  migrations/      # Pending SQL migration files
-  migrations/ran/  # Completed migrations
+  migrations/                          # Per-user folders {userId}-{username}/ holding pending SQL files
+  migrations/{userId}-{username}/ran/  # Completed migrations
 tests/             # PHPUnit tests
 ```
 
@@ -93,7 +93,7 @@ $this->dispatch(new \Dashboard\Notification\ContentEvent(
 
 **Rule:** When you need the standard layout (navbar/sidebar, footer, settings), use `dashboardTemplate()` or `webTemplate()`. These call `template()` internally to build layout + content. When you need full control over the output without any layout, use `template()` directly.
 
-**DashboardTrait method collision rule:** a controller that uses `Dashboard\Template\DashboardTrait` MUST NOT define a method with the same name as any of the trait's public API (`dashboardTemplate`, `dashboardProhibited`, `modalProhibited`, `getUserMenu`, `getUserOrganizations`). In PHP a class method silently overrides the trait method, so the trait's internal calls (e.g. `dashboardTemplate()` calling `getUserOrganizations()` for the topbar org switcher) would dispatch to the controller's unrelated version and break the layout. If a controller needs a similar helper, pick a distinct name (e.g. `getMemberOrganizations()`).
+**DashboardTrait method collision rule:** a controller that uses `Dashboard\Template\DashboardTrait` MUST NOT define a method with the same name as any of the trait's methods (`dashboardTemplate`, `dashboardProhibited`, `modalProhibited`, `getUserMenu`, `getUserOrganizations`, and the protected `retrieveUsersDetail`). In PHP a class method silently overrides the trait method, so the trait's internal calls (e.g. `dashboardTemplate()` calling `getUserOrganizations()` for the topbar org switcher) would dispatch to the controller's unrelated version and break the layout. If a controller needs a similar helper, pick a distinct name (e.g. `getMemberOrganizations()`).
 
 **Customizing the dashboard layout:** the three layout templates DashboardTrait renders internally live in `application/dashboard/template/` (`dashboard.html`, `alert-no-permission.html`, `modal-no-permission.html`). When redesigning `dashboard.html`, it must keep `{{ content }}`, the `csrf-token` and `waf-body-encoding` meta tags, and the `dashboard.js`/`dashboard.css` includes, otherwise CSRF, WAF encoding, badges and the org switcher break. The sidemenu loop is optional - the developer can build their own navigation any way they like (keep the loop only if you want the ready-made RBAC-filtered menu). The "Visit Website" entry under the Dashboard link is static markup, not a menu record (`{{ index }}/` with `target="_blank"`, `visit-website` text keyword), rendered only when `has_web` is true (`dashboardTemplate()` sets it from `class_exists(\Web\Application::class)`). A `raptor_menu` `href` is a plain URL and cannot carry a `target`; `activateLink()` in `dashboard.js` skips `target="_blank"` sidebar links, because the site root is a prefix of every dashboard URL and would otherwise show as active everywhere.
 
@@ -120,7 +120,7 @@ $this->webTemplate(__DIR__ . '/products.html', [
 
 ### 2. Create Model
 
-Extend `codesaur\DataObject\Model`. Define columns in constructor, set table name via `setTable()`. The framework automatically creates the table on model's first use - do NOT write CREATE TABLE in migration files. Use `__initial()` for FK constraints and indexes only. Do not create sample data (*Samples.php) for new modules - sample data only exists for the built-in modules (Pages, Reference, News, Products, Menu, Organization) that ship with the framework. Production seed data (permissions, translations, menu entries) is handled in steps 6-8 below.
+Extend `codesaur\DataObject\Model`. Define columns in constructor, set table name via `setTable()`. The framework automatically creates the table on model's first use - do NOT write CREATE TABLE in migration files. Use `__initial()` for FK constraints and indexes only. Do not create sample data (*Samples.php) for new modules - sample files exist only for the built-in News, Pages and Products modules (Reference, Menu and Organization ship seed/initial data, not samples). Production seed data (permissions, translations, menu entries) is handled in steps 6-8 below.
 
 Migration files are ONLY for changing existing tables (ALTER, new indexes, data inserts into live databases). Never use migrations to create tables for new modules.
 
@@ -142,7 +142,7 @@ Register routes in a Router class extending `codesaur\Router\Router`.
 - Use vanilla HTML comments (`<!-- -->`), not template engine comments (`{# #}`)
 - Never use `{{ }}` or `{% %}` inside comments - template may evaluate them. Document variables by name only, e.g. `<!-- Variables: max_file_size, record, files -->`
 - In inline `<script>` blocks use `/* ... */` comments, NEVER `//` line comments - HTML minification can collapse newlines, and a `//` would then comment out all following code on the merged line
-- `|text` filter returns the keyword itself when not found, so do NOT add `|default` after it - `{{ 'keyword'|text }}` is always safe
+- `|text` filter returns `{keyword}` (the key in braces) when not found - never null or empty - so do NOT add `|default` after it; `{{ 'keyword'|text }}` is always safe
 
 **Template engine = `codesaur/template` (NOT Twig).** The syntax mimics Twig but is a custom parser. Twig features that are NOT supported (use the listed alternative):
 - `..` range operator -> `range(a, b)` function. e.g. `{% for i in 1..5 %}` -> `{% for i in range(1, 5) %}`
@@ -426,7 +426,7 @@ if ($this->getDriverName() === Constants::DRIVER_PGSQL) {
 }
 ```
 
-Always use `Constants::DRIVER_PGSQL` / `DRIVER_MYSQL` / `DRIVER_SQLITE` rather than the raw `'pgsql'` / `'mysql'` strings - the literals were replaced framework-wide when `codesaur/dataobject` v9.1.0 introduced the Constants class.
+Always use `Constants::DRIVER_PGSQL` / `DRIVER_MYSQL` / `DRIVER_SQLITE` rather than the raw `'pgsql'` / `'mysql'` strings (`DatabaseConnection::driver()` validates the `RAPTOR_DB_DRIVER` env value against the same constants).
 
 Common differences to watch: `JSON_EXTRACT` vs `::jsonb`, `SHOW TABLES/COLUMNS` vs `pg_catalog`/`information_schema`, `AUTO_INCREMENT` vs `setval()`, `ON DUPLICATE KEY UPDATE` vs `ON CONFLICT DO UPDATE`, `DATE_SUB(NOW(), INTERVAL 15 MINUTE)` vs `NOW() - INTERVAL '15 minutes'`, identifier quoting (backticks vs double quotes).
 
@@ -452,7 +452,7 @@ State derivation: file at `{folder}/*.sql` = **pending**; file at `{folder}/ran/
 Lifecycle:
 1. `system_coder` uploads a `.sql` file via the dashboard
 2. File stored at `database/migrations/{userId}-{username}/{filename}.sql`
-3. Apply is requested -> `MigrationSecurityScanner` flags writes against sensitive tables (`users`, `rbac_*`, `organizations*`, `localization_language`, `raptor_menu`) and DCL (`GRANT/REVOKE`, `CREATE/DROP/ALTER USER`)
+3. Apply is requested -> `MigrationSecurityScanner` flags writes against sensitive tables (`users`, `rbac_*`, `organizations*`, `localization_language`, `raptor_menu`), DCL (`GRANT/REVOKE`, `CREATE/DROP/ALTER USER`) and any `CREATE [TEMPORARY] TABLE` (tables belong to Model classes)
 4. If warnings present, the dashboard requires a typed `CONFIRM` to proceed (soft guard, not hard block)
 5. On success the file moves to `{folder}/ran/`; on failure it stays pending and the error is logged to `dashboard_log` (action: `migration-apply`)
 
@@ -643,13 +643,15 @@ For modules not tracked in logs (manual, migrations), badges are based on file c
 
 ## Dashboard Global Search + Topbar Quick Icons
 
-The topbar right side is flat (no user dropdown): **search | language | theme | user | logout**.
+The topbar right side is: **search | language | theme | account dropdown**.
 
 - **Search** opens a centered modal (`#global-search`, also via Ctrl+K). `SearchController` (`application/dashboard/home/`) powers it: per-module LIKE queries returning grouped JSON results. `initGlobalSearch()` in `dashboard.js` handles open/close, debounced search and keyboard navigation (arrows + Enter). If the search route is not registered (`|link` returns `'#'`) the function removes the topbar search icon and exits; results whose view-route pattern resolves to `'#'` are hidden from the list.
 - **Language** is a dropdown listing active languages (hidden when only one language is active, per UI convention). Selecting fetches the `language` route (session-persisted) and reloads - handled by `initTopbarQuick()` via `data-language-url` attributes.
 - **Theme** is a light/dark dropdown applied instantly through `localStorage` + `data-bs-theme` (no reload) - handled by `initTopbarQuick()` via `data-theme` attributes. These dropdowns replaced the old "Language & Options" modal (`user-option` route, removed).
-- **User** (avatar + name) links straight to the admin's own profile page (`user-update` route) - no dropdown in between.
-- **Logout** is an icon-only button after a separator. Because logout is a plain GET link, it always asks for confirmation (`initLogoutConfirm()` in `dashboard.js`): a Bootstrap modal (`#logout-confirm-modal` in `dashboard.html`) when Bootstrap JS is available, falling back to native `confirm()` when the CDN failed to load - so logout works even fully offline. A custom dashboard layout that keeps the shipped logout button must also keep the `#logout-confirm-modal` markup (or accept the `confirm()` fallback).
+- **Account dropdown** (`.topbar-user`, avatar + name; name hidden below 576px) is the standard admin-panel account menu: a non-clickable header (full name, email, current organization), then **My profile** (`user-update` route), then **Logout** (`text-danger`, plain `logout` link) at the bottom. Logout lives ONLY here, on every screen size - there is no separate logout icon and no confirmation modal (opening the menu and then choosing Logout is already a deliberate two-step action, so the old `#logout-confirm-modal` / `initLogoutConfirm()` were removed).
+- **Organization switcher** (brand, only when the user belongs to more than one organization) uses `data-bs-display="static"` (no Popper). On mobile `dashboard.css` makes `.topbar-brand` `position:static` so the menu anchors to the sticky topbar and spans its full width (`left/right: .5rem`), with a 60vh scrollable list and larger rows. `initOrgSwitcher()` does not auto-focus the search input on touch devices (`pointer: coarse`) so the virtual keyboard does not cover the list. Keep `data-bs-display="static"` - with Popper the inline transform overrides that positioning.
+
+**Mobile (<768px):** the topbar is **sidebar toggle | brand ... search | account**. The toggle sits first (left) so a long organization name can never push it off-screen, and the offcanvas opens from the start side. The brand is the only shrinking part (`.topbar-brand` with `min-width:0`, name truncated with ellipsis); `.topbar-actions` never shrinks - keep this, otherwise the row overflows the viewport and causes horizontal scroll. Language and theme are hidden from the topbar (`d-none d-md-block`) and rendered instead in the `.sidebar-quick` block (`d-md-none`) at the bottom of the offcanvas sidebar, with the same `data-language-url` / `data-theme` attributes so `initTopbarQuick()` handles both.
 
 **Permission invariant:** every source block in `search()` MUST be gated with the SAME permission (or row-level filter) the module's own index page requires: news/pages/messages/comments -> `system_content_index`, products/orders/reviews -> `system_product_index`, users -> `system_user_index`, organizations -> `system_organization_index`, dev-requests -> any authorized user but WITHOUT `system_development` only own/assigned rows (`created_by`/`assigned_to`), mirroring `DevRequestController::list()`. Search results must be a subset of what the user could see by browsing - if the module's index page would render `dashboardProhibited`, its records must never appear in search (orders/messages carry customer PII, so a wrong gate is a data leak, not just a UX bug). When adding a module to search, copy the exact `isUserCan()` check from that module's index action.
 
@@ -705,7 +707,7 @@ All standard deploy paths live in `.github/workflows/deploy.yml` (runs after CI 
 - `codesaur/raptor` (the framework repo): bump only per RELEASE, together with the new CHANGELOG version heading, keeping it equal to the release git tag.
 - Any other `name` (a production project built on Raptor): bump the PATCH part of `extra.version` in the SAME commit as any code/template change you make - even when the task prompt never mentions versioning. The site admins are often non-programmers who delegate work to Claude Code and cannot reach the live server; the sidebar's `{name} {version} | {date}` line is how they verify a requested change actually deployed, and it only moves when `extra.version` moves. Reserve minor/major bumps for when the user asks; no CHANGELOG entry or git tag is required for these bumps. If `extra.version` is missing from the project's composer.json, add it (start at `1.0.0`).
 
-In both repos, set `extra.modified` to the current date and time (`YYYY-MM-DD HH:MM`, local time) in the same edit as every `extra.version` bump. Two rules the field brings: (1) the release git tag MUST equal the `version` value - Packagist skips tags that mismatch it; (2) `ci.yml` runs `composer validate --strict --no-check-version` because strict mode otherwise fails on the version field's advisory warning. Purpose: admins who cannot reach the live server can verify a deploy landed by checking the version in the sidebar.
+In both repos, set `extra.modified` to the current date and time (`YYYY-MM-DD HH:MM`, local time) in the same edit as every `extra.version` bump. Because the field lives in `extra` and there is no root `version`, Packagist tag matching and `composer validate --strict` (run as-is by `ci.yml`) are unaffected; the framework convention is still that the release git tag equals `extra.version`. Purpose: admins who cannot reach the live server can verify a deploy landed by checking the version in the sidebar.
 
 As a fallback (**deploy path C** in the READMEs) for the rare environments neither job can reach - cPanel shared hosting with SSH/Terminal disabled and no reachable FTP (real-world example: the National Data Center of Mongolia shared hosting for government agency portals); being on cPanel alone does NOT imply this path, use A/B when the host offers FTP/SSH - a cPanel Git scaffold ships in `docs/conf.example/`: `.cpanel.yml.example` (copy to repo root as `.cpanel.yml`) and `auto-deploy.sh.example` (copy to `deploy/auto-deploy.sh`, run via cron). The scaffold handles `vendor/`-less repos by running `composer install` when `composer.lock` changes and `composer dump-autoload -o` when only `composer.json` changes (new PSR-4 module maps). Read `docs/mn/CPANEL.md` BEFORE touching that scaffold's behavior - it documents the PascalCase-vs-lowercase module folder naming rule, the CLI-SAPI php lookup gotcha, and the two-phase sequencing rule for changing the deploy script itself (a deploy that updates `auto-deploy.sh` still runs the OLD logic that cycle - land script changes one deploy BEFORE the changes that depend on them).
 

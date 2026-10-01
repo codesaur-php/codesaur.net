@@ -126,6 +126,36 @@ class MarkdownTest extends RaptorTestCase
         $this->assertStringContainsString('<a href="https://example.com/x?a=1&amp;b=2" target="_blank" rel="noopener">', $html);
     }
 
+    public function testDangerousLinkSchemesAreRenderedAsText(): void
+    {
+        $html = (new Markdown())->convert(
+            "[a](javascript:alert(1)) [b](JavaScript:alert(1)) [c](data:text/html,x) [d](vbscript:x)"
+            . " [e](java\x01script:alert(1)) ![f](javascript:alert(1)) ![g](data:image/svg+xml,x)"
+        );
+        $this->assertStringNotContainsString('<a ', $html);
+        $this->assertStringNotContainsString('<img', $html);
+        $this->assertStringNotContainsString('href=', $html);
+        $this->assertStringNotContainsString('src=', $html);
+        $this->assertStringStartsWith('<p>a', $html);
+    }
+
+    public function testSafeLinkSchemesStillWork(): void
+    {
+        $html = (new Markdown())->convert("[mail](mailto:info@codesaur.net) [top](#install) [rel](docs/api.md) [q](?page=2)");
+        $this->assertStringContainsString('<a href="mailto:info@codesaur.net">mail</a>', $html);
+        $this->assertStringContainsString('<a href="#install">top</a>', $html);
+        $this->assertStringContainsString('<a href="docs/api.md">rel</a>', $html);
+        $this->assertStringContainsString('<a href="?page=2">q</a>', $html);
+    }
+
+    public function testDangerousSchemeFromResolverIsBlocked(): void
+    {
+        $md = new Markdown(fn(string $href): string => 'javascript:alert(1)');
+        $html = $md->convert("[x](docs/api.md)");
+        $this->assertStringNotContainsString('<a ', $html);
+        $this->assertStringContainsString('x', $html);
+    }
+
     public function testBackslashEscapes(): void
     {
         $html = (new Markdown())->convert("not \\*bold\\* and \\`code\\`");

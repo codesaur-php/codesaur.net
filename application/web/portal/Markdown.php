@@ -21,7 +21,9 @@ namespace Web\Portal;
  *
  * Аюулгүй байдал: текст бүхэлдээ htmlspecialchars-аар escape хийгдэнэ -
  * raw HTML дамжуулахгүй (docs дахь <!-- --> тайлбар зэрэг нь текст
- * хэлбэрээр харагдана). Зөвхөн энэ класс өөрөө tag үүсгэнэ.
+ * хэлбэрээр харагдана). Зөвхөн энэ класс өөрөө tag үүсгэнэ. Холбоос,
+ * зургийн хаяг scheme-ийн whitelist-ээр шүүгдэнэ (http, https, mailto,
+ * харьцангуй зам) - javascript: / data: хаяг текст хэлбэрээр үлдэнэ.
  *
  * Холбоосын хаягийг $linkResolver callback-аар дахин бичих боломжтой
  * (жишээ: docs/mn/api.md -> портал route, LICENSE -> GitHub blob).
@@ -485,15 +487,21 @@ class Markdown
 
         $text = \htmlspecialchars($text, \ENT_QUOTES, 'UTF-8');
 
-        // Зураг
+        // Зураг (аюултай scheme-тэй бол зөвхөн alt текст үлдэнэ)
         $text = \preg_replace_callback('/!\[([^\]]*)\]\(([^)\s]+)(?:\s+&quot;([^&]*)&quot;)?\)/', function (array $m): string {
+            if (!self::isSafeUrl(\html_entity_decode($m[2], \ENT_QUOTES, 'UTF-8'), ['http', 'https'])) {
+                return $m[1];
+            }
             $title = isset($m[3]) ? ' title="' . $m[3] . '"' : '';
             return '<img src="' . $m[2] . '" alt="' . $m[1] . '"' . $title . '>';
         }, $text);
 
-        // Холбоос [text](url "title")
+        // Холбоос [text](url "title") (аюултай scheme-тэй бол зөвхөн текст үлдэнэ)
         $text = \preg_replace_callback('/\[([^\]]+)\]\(([^)\s]+)(?:\s+&quot;([^&]*)&quot;)?\)/', function (array $m): string {
             $href = $this->resolveLink(\html_entity_decode($m[2], \ENT_QUOTES, 'UTF-8'));
+            if (!self::isSafeUrl($href, ['http', 'https', 'mailto'])) {
+                return $m[1];
+            }
             $title = isset($m[3]) ? ' title="' . $m[3] . '"' : '';
             $external = \preg_match('#^https?://#i', $href) ? ' target="_blank" rel="noopener"' : '';
             return '<a href="' . \htmlspecialchars($href, \ENT_QUOTES, 'UTF-8') . '"' . $title . $external . '>' . $m[1] . '</a>';
@@ -530,6 +538,33 @@ class Markdown
             return (string) \call_user_func($this->linkResolver, $href);
         }
         return $href;
+    }
+
+    /**
+     * URL-ийг href/src-д хэвлэхэд аюулгүй эсэхийг шалгах.
+     *
+     * Scheme-гүй (харьцангуй зам, #anchor, ?query) хаяг аюулгүй. Scheme-тэй
+     * бол зөвхөн $allowed жагсаалтад байгааг зөвшөөрнө - javascript:, data:,
+     * vbscript: зэрэг нь хасагдана. Браузер URL-аас хянах тэмдэгт болон
+     * хоосон зайг хаядаг тул (java\tscript:) шалгахаас өмнө тэдгээрийг
+     * хасна.
+     *
+     * Security (English): this whitelist is what keeps a markdown link from
+     * becoming a javascript: URL in the rendered page. Keep checking the
+     * FINAL href (after the link resolver) and strip control characters
+     * first, exactly like the browser's URL parser does.
+     *
+     * @param string $url Шалгах хаяг (HTML entity задалсан)
+     * @param array<int, string> $allowed Зөвшөөрөгдөх scheme-үүд (жижиг үсгээр)
+     * @return bool
+     */
+    private static function isSafeUrl(string $url, array $allowed): bool
+    {
+        $normalized = \preg_replace('/[\x00-\x20\x7F]+/', '', $url);
+        if (!\preg_match('/^([a-z][a-z0-9+.\-]*):/i', $normalized, $m)) {
+            return true;
+        }
+        return \in_array(\strtolower($m[1]), $allowed, true);
     }
 
     /**

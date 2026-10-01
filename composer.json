@@ -1,8 +1,8 @@
 {
     "name": "codesaur/codesaur.net",
     "extra": {
-        "version": "1.0.39",
-        "modified": "2026-09-30 15:25"
+        "version": "1.0.40",
+        "modified": "2026-10-01 15:43"
     },
     "type": "project",
     "description": "codesaur.net - codesaur экосистемийн (Raptor framework болон багцууд) албан ёсны портал",
@@ -39,7 +39,7 @@
         "codesaur/http-application": "^7.0.1",
         "codesaur/dataobject": "^10.2.1",
         "codesaur/http-client": "^2.1.2",
-        "codesaur/template": "^5.0.0",
+        "codesaur/template": "^5.0.1",
         "codesaur/container": "^3.2.0"
     },
     "autoload": {

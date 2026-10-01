@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b24b975fa15441df379e0c8803a4f7c3",
+    "content-hash": "13540ade027071cef54f6cf60d9fb651",
     "packages": [
         {
             "name": "codesaur/container",
@@ -384,16 +384,16 @@
         },
         {
             "name": "codesaur/template",
-            "version": "v5.0.0",
+            "version": "v5.0.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/codesaur-php/Template.git",
-                "reference": "d82bb851bcea403d722c31acb7484c4928b3bcca"
+                "reference": "9c11c1379e0e1ce941ab58f9b3d8baa78a6df325"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/codesaur-php/Template/zipball/d82bb851bcea403d722c31acb7484c4928b3bcca",
-                "reference": "d82bb851bcea403d722c31acb7484c4928b3bcca",
+                "url": "https://api.github.com/repos/codesaur-php/Template/zipball/9c11c1379e0e1ce941ab58f9b3d8baa78a6df325",
+                "reference": "9c11c1379e0e1ce941ab58f9b3d8baa78a6df325",
                 "shasum": ""
             },
             "require": {
@@ -442,9 +442,9 @@
             ],
             "support": {
                 "issues": "https://github.com/codesaur-php/Template/issues",
-                "source": "https://github.com/codesaur-php/Template/tree/v5.0.0"
+                "source": "https://github.com/codesaur-php/Template/tree/v5.0.1"
             },
-            "time": "2026-09-09T09:17:04+00:00"
+            "time": "2026-10-01T05:39:05+00:00"
         },
         {
             "name": "fig/http-message-util",

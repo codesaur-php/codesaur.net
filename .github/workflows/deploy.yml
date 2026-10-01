@@ -91,6 +91,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          # CI шалгасан commit-ийг deploy хийнэ (default branch-ийн сүүлийн commit биш)
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Setup PHP 8.2
         uses: shivammathur/setup-php@v2
@@ -135,6 +138,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          # CI шалгасан commit-ийг deploy хийнэ (default branch-ийн сүүлийн commit биш)
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Setup PHP 8.2
         uses: shivammathur/setup-php@v2

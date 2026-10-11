@@ -221,6 +221,36 @@ body.tc-desktop img {
 .tc-menu-right {
     margin-left: auto;
 }
+/* Сагс: хоосон үед (a.d-none) li бүхэлдээ нуугдана; product.html нэмэхэд cart-bump тоглуулна */
+.tc-menu-cart:has(> a.d-none) {
+    display: none;
+}
+.tc-menu-cart a {
+    gap: .25rem;
+}
+.tc-cart-count {
+    background: var(--tc-red);
+    color: var(--tc-white);
+    font-size: .75rem;
+    font-weight: 700;
+    line-height: 1;
+    padding: .15rem .35rem;
+}
+@keyframes cart-bump {
+    0% { transform: scale(1); }
+    30% { transform: scale(1.35) rotate(-8deg); }
+    60% { transform: scale(.92) rotate(4deg); }
+    100% { transform: scale(1); }
+}
+#navbar-cart.cart-bump i {
+    display: inline-block;
+    animation: cart-bump .6s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+    #navbar-cart.cart-bump i {
+        animation: none;
+    }
+}
 .tc-menu-search {
     display: flex;
     align-items: center;

@@ -6,6 +6,144 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/) and this 
 
 ---
 
+## [5.6.0] - 2026-10-06
+[5.6.0]: https://github.com/codesaur-php/Raptor/compare/v5.5.0...v5.6.0
+
+### Added
+
+- **Web cart.** Visitors collect several products in a session cart and send them as one order. `Web\Shop\Cart` keeps only `[product_id => quantity]` in `$_SESSION['RAPTOR_WEB_CART']` (capped at `MAX_LINES` 50 products and `MAX_QUANTITY` 999 per product); titles, prices, stock and the published flag are re-read from `products` every time the cart is shown or checked out, so a price is never taken from the session or the client. New routes: `GET /cart` (`cart`), `POST /session/cart/add` (`cart-add`) and `POST /session/cart/update` (`cart-update`; quantity `0` or the trash button removes a line). Both POST routes redirect back to the cart (303) and work without JavaScript. The product page has a single "Add to cart" button (the separate "Order Now" link is gone - the order is placed from the cart), and the navbar shows a cart icon with the item count while the cart is not empty (`cart_count`, set by `TemplateController::webTemplate()`).
+- **"Add to cart" feedback without leaving the page.** With JavaScript the product page sends the add-to-cart form with `fetch()` (`Accept: application/json`); `cartAdd()` then answers `{status, message, in_cart, count}` instead of redirecting. A dialog confirms the result - "Added to cart" with the product photo and title (`success`), a warning with the remaining stock when the quantity was capped at the stock (`limited`), or an error (`error`, out of stock / unknown product) - with three buttons: "Continue shopping" (closes the dialog), "View cart" (`/cart`) and "Checkout" (opens the `/order` checkout with the whole cart); the last two are hidden while the cart is empty. The buttons stack vertically on phones and sit in one row from the `sm` breakpoint. The button briefly shows a check mark, and the navbar cart icon appears (if hidden), updates its count and plays a short bump animation (`#navbar-cart`, `cart-bump`; disabled under `prefers-reduced-motion`). Without JavaScript the form still posts and redirects to the cart.
+- **Multi-product orders.** `/order` is the cart checkout: it lists the cart with line totals and the order total, and `ShopController::orderSubmit()` creates one order for the whole cart and empties the cart afterwards. An order always covers the whole cart - there is no separate single-product order path. Stock is checked per product on the cart and checkout pages and again on submit. The price is `sale_price` when it is greater than 0, otherwise `price`.
+- **`products_orders.items` and `products_orders.total`.** `items` (`text`) stores the order lines as JSON (`product_id`, `title`, `price`, `quantity`) - a snapshot taken at ordering time, so a later price change does not alter the order; `total` (`decimal(12,2)`) is the order total. For a multi-product order `product_title` holds a `Name x2, Name x1` summary, `quantity` the total units and `product_id` is NULL, so the order list, global search, e-mails and Discord notifications keep working unchanged. Orders created before this version have an empty `items` and are read from `product_id` / `product_title` / `quantity` as before.
+- The dashboard order view lists each product with price, quantity, line total and the order total. Confirming a multi-product order subtracts the stock of every tracked product in one transaction - if any product has insufficient stock, nothing is subtracted and the status does not change; cancelling adds it back to the tracked products.
+- The `order-confirmation` and `order-notify` e-mail templates also receive `items` and `total`; the shipped templates are unchanged and keep using `product_title` / `quantity`.
+- `docs/en/WEB-MEMBERSHIP.md` / `docs/mn/WEB-MEMBERSHIP.md` - a guide for projects that need customer accounts and "Sign in with Google" (separate `customers` table, `/session/` routes, web CSRF, OpenID Connect with PKCE and `firebase/php-jwt`, identifying accounts by `sub`, the `email_verified` linking rule). Customer accounts are not part of the framework: most Raptor sites do not need them, and the subsystem would touch the layout, routing, session and CSRF of every project.
+
+### Changed
+
+- **`/order` checks out the cart only.** `/order?product_id=` used to order that single product and `/order` without it showed a form with no product. `/order` now always checks out the cart (a `cart-empty` notice when the cart is empty); old `/order?product_id=` links redirect (301) to the product page, or to the product list when the product is not published. `orderSubmit()` ignores `product_id` / `quantity` in the body and takes the lines from the cart.
+- **The phone number on the order form is required**, like the delivery address - the courier calls the customer during delivery. The field is `type="tel"` with `autocomplete="tel"` and a `phone-for-delivery` hint under it ("Used to contact you about the delivery"). `orderSubmit()` repeats the check on the server: digits, `+`, spaces, `-` and parentheses, 6-32 characters with at least 6 digits; no country format is enforced, so foreign numbers are accepted. A project selling only digital goods or services can drop the `required` attribute and the server check.
+
+### Migration
+
+Fresh installs get the new columns and texts. Deployed databases: apply this SQL through `/dashboard/migrations` (no sensitive tables, no `CONFIRM`; the cache is cleared after a successful apply). Existing orders get an empty `items` and `total = 0`, and are displayed and stock-handled exactly as before.
+
+```sql
+-- 5.6.0: web cart, multi-product orders
+ALTER TABLE products_orders ADD COLUMN items TEXT;
+ALTER TABLE products_orders ADD COLUMN total DECIMAL(12,2) NOT NULL DEFAULT 0;
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'add-to-cart', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'add-to-cart');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'added-to-cart', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'added-to-cart');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'cart', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'cart');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'cart-empty', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'cart-empty');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'checkout', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'checkout');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'continue-shopping', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'continue-shopping');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'phone-for-delivery', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'phone-for-delivery');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'total', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'total');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'view-cart', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'view-cart');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Сагсанд нэмэх' FROM localization_text t WHERE t.keyword = 'add-to-cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Add to Cart' FROM localization_text t WHERE t.keyword = 'add-to-cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Сагсанд нэмэгдлээ' FROM localization_text t WHERE t.keyword = 'added-to-cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Added to cart' FROM localization_text t WHERE t.keyword = 'added-to-cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Сагс' FROM localization_text t WHERE t.keyword = 'cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Cart' FROM localization_text t WHERE t.keyword = 'cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Таны сагс хоосон байна' FROM localization_text t WHERE t.keyword = 'cart-empty' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Your cart is empty' FROM localization_text t WHERE t.keyword = 'cart-empty' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Захиалга баталгаажуулах' FROM localization_text t WHERE t.keyword = 'checkout' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Checkout' FROM localization_text t WHERE t.keyword = 'checkout' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Худалдан авалтаа үргэлжлүүлэх' FROM localization_text t WHERE t.keyword = 'continue-shopping' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Continue shopping' FROM localization_text t WHERE t.keyword = 'continue-shopping' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Хүргэлтийн үед тантай холбогдоход ашиглана' FROM localization_text t WHERE t.keyword = 'phone-for-delivery' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Used to contact you about the delivery' FROM localization_text t WHERE t.keyword = 'phone-for-delivery' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Нийт' FROM localization_text t WHERE t.keyword = 'total' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Total' FROM localization_text t WHERE t.keyword = 'total' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Сагсаа харах' FROM localization_text t WHERE t.keyword = 'view-cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'View cart' FROM localization_text t WHERE t.keyword = 'view-cart' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+```
+
+---
+
+## [5.5.0] - 2026-10-05
+[5.5.0]: https://github.com/codesaur-php/Raptor/compare/v5.4.6...v5.5.0
+
+### Added
+
+- **Delivery address on the order form.** The public order form has a required "Delivery address" field (`delivery-address`); it is stored in the new `products_orders.customer_address` column (`text`), shown on the dashboard order view and passed to the `order-notify` admin e-mail as `{{ customer_address }}`. `ShopController::orderSubmit()` rejects an order without an address.
+- **Per-product stock tracking.** The new `products.manage_stock` flag (`tinyint`, default 0) - the "Track stock" switch next to the stock field in the product form - decides whether a product's `stock` is enforced, the same model as Shopify "Track quantity" / WooCommerce "Manage stock". The stock input is disabled while the switch is off. Untracked products (services, made-to-order, digital goods) can always be ordered; the dashboard product view shows "Track stock: Off" for them.
+- **Out-of-stock handling for tracked products.** At `stock` 0 the product page stays visible (no 404, no SEO loss) with an `out-of-stock` badge and a disabled order button; the product list shows the same badge, and the order form is not rendered (an `out-of-stock` notice and a link back to the product are shown instead). The quantity input is capped at the stock, and `orderSubmit()` repeats both checks on the server, since a request can be posted without opening the form.
+- **Low-stock display.** Tracked products show `only-n-left` ("Only 3 left") when the stock is at or below `ShopController::LOW_STOCK_THRESHOLD` (default 5, edit the constant per project) and `in-stock` without the exact number above it.
+- **Stock is reduced when an order is confirmed and restored when it is cancelled.** `OrdersController::updateStatus()` subtracts the order quantity from the product stock when the status enters `confirmed`, `shipped` or `completed` (`STOCK_HOLDING_STATUSES`) and adds it back when it leaves them (`cancelled`, or back to `new` / `processing`). The new `products_orders.stock_reduced` flag records whether the order currently holds stock, so repeated status changes never subtract twice. The product row is locked (`SELECT ... FOR UPDATE`) and the stock change and the status update run in one transaction; when the stock is insufficient the confirmation is rejected with `not-enough-stock` and nothing changes. Untracked or deleted products are skipped. The change is written to the order log as `stock_change`. Deleting an order does not touch stock - cancel it first.
+
+### Migration
+
+Fresh installs get the new columns, texts and e-mail template row. Deployed databases: apply this SQL through `/dashboard/migrations` (no sensitive tables, no `CONFIRM`; the cache is cleared after a successful apply). Existing products get `manage_stock = 0`, so nothing becomes unorderable; turn "Track stock" on per product once its real stock is entered. Existing orders get `stock_reduced = 0`, so confirming or cancelling an order placed before this update does not change stock; only status changes made after it do. The `order-notify` e-mail template is not changed by the migration - to include the address in the admin e-mail, add a row with `{{ customer_address }}` to it under Dashboard > References.
+
+```sql
+-- 5.5.0: delivery address, per-product stock tracking, stock reduction on order confirmation
+ALTER TABLE products ADD COLUMN manage_stock SMALLINT NOT NULL DEFAULT 0;
+ALTER TABLE products_orders ADD COLUMN customer_address TEXT;
+ALTER TABLE products_orders ADD COLUMN stock_reduced SMALLINT NOT NULL DEFAULT 0;
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'delivery-address', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'delivery-address');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'in-stock', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'in-stock');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'manage-stock', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'manage-stock');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'not-enough-stock', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'not-enough-stock');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'only-n-left', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'only-n-left');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'out-of-stock', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'out-of-stock');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Хүргүүлэх хаяг' FROM localization_text t WHERE t.keyword = 'delivery-address' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Delivery address' FROM localization_text t WHERE t.keyword = 'delivery-address' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Нөөцөд байгаа' FROM localization_text t WHERE t.keyword = 'in-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'In stock' FROM localization_text t WHERE t.keyword = 'in-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Нөөц хянах' FROM localization_text t WHERE t.keyword = 'manage-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Track stock' FROM localization_text t WHERE t.keyword = 'manage-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Бүтээгдэхүүний үлдэгдэл хүрэлцэхгүй байна' FROM localization_text t WHERE t.keyword = 'not-enough-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Not enough product stock' FROM localization_text t WHERE t.keyword = 'not-enough-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Ердөө %s үлдлээ' FROM localization_text t WHERE t.keyword = 'only-n-left' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Only %s left' FROM localization_text t WHERE t.keyword = 'only-n-left' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Нөөцөд байхгүй байна' FROM localization_text t WHERE t.keyword = 'out-of-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'Out of stock' FROM localization_text t WHERE t.keyword = 'out-of-stock' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+```
+
+---
+
+## [5.4.6] - 2026-10-02
+[5.4.6]: https://github.com/codesaur-php/Raptor/compare/v5.4.5...v5.4.6
+
+### Security
+
+- **Product `link` had no backend validation.** The products form uses `<input type="url">`, which accepts any absolute URL including `javascript:`, and `ProductsController::insert()/update()` stored the value unchecked; `products-view.html` prints it as an `href`, so a stored `javascript:` link ran in the admin's session when clicked (autoescape does not neutralize a URL scheme). `ProductsController` now has its own private `isValidLink()` with the same rule as `PagesController` (kept per module, so a module can be removed or customized on its own): an empty value, a local path (`/path`), `http(s)://`, `//`, `mailto:` or `tel:` - anything else is rejected with `link-must-be-url`.
+
+### Fixed
+
+- **The English sample menu sent visitors back to the default language.** The language URL prefix (5.3.0) did not touch `PagesSamples.php`, so the English "News", "Products" and "Contact" menu pages kept the unprefixed `/news/type/all`, `/products`, `/contact`. A page `link` is printed verbatim as the menu `href`, so a visitor on `/en/` who clicked "Products" landed on `/products` - the default-language page. The English samples now store `/en/...` (the seeds rely on `LanguageModel::__initial()` registering `mn` as the default and `en` as the prefixed language).
+
+### Added
+
+- **Page form warnings for language-unsafe links.** The page insert/update forms show a non-blocking warning under the `link` field: `link-language-prefix-warning` with the corrected path (`/products` -> `/en/products`, subdirectory deploys included) when a page in a non-default language gets a local path without a language prefix, and `link-all-languages-warning` when an "All languages" (`*`) page gets a local path, since such a link sends every language to the same one. `/dashboard` paths and URLs are ignored. The check re-runs when the link or the language changes and on opening the update form, so existing wrong links show up too. The pages and moedit manuals (MN/EN) explain the rule for page links and for local links inside content.
+- The public `/products` route is named `products`, so templates can use `{{ 'products'|link }}`.
+
+### Changed
+
+- CLAUDE.md and `docs/*/api.md`: `{{ index }}` carries no language prefix, so web links should preferably use `{{ 'route'|link }}`; the default language is an install-time decision - changing it on a live site swaps the URL structure and needs a planned migration (stored paths + 301 redirects).
+
+### Migration
+
+Fresh installs get the new texts and corrected samples. Deployed databases: apply this SQL through `/dashboard/migrations` (no sensitive tables, no `CONFIRM`; the cache is cleared after a successful apply). The `UPDATE` matches root installs only - on a subdirectory install the sample links carry the script path, fix those in the Pages form (the new warning shows the correct value).
+
+```sql
+-- 5.4.6: page link language warnings + /en prefix for the EN sample menu links
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'link-all-languages-warning', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'link-all-languages-warning');
+INSERT INTO localization_text (keyword, type, created_at) SELECT 'link-language-prefix-warning', 'sys-defined', NOW() WHERE NOT EXISTS (SELECT 1 FROM localization_text WHERE keyword = 'link-language-prefix-warning');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Энэ хуудас бүх хэл дээр харагдана. Сайтын хуудас руу заасан локал зам аль ч хэлнээс нэг л хэл рүү (prefix-гүй бол default хэл рүү) шилжүүлнэ - хэл тус бүрд тусдаа хуудас үүсгэнэ үү.' FROM localization_text t WHERE t.keyword = 'link-all-languages-warning' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'This page is shown in every language. A local path to a site page sends visitors from every language to one language (the default one without a prefix) - create a separate page per language.' FROM localization_text t WHERE t.keyword = 'link-all-languages-warning' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'mn', 'Энэ хуудас default бус хэлтэй. Сайтын хуудас руу заасан локал зам хэлний prefix-тэй байх ёстой, эс бөгөөс зочин default хэл рүү шилжинэ. Зөв хэлбэр:' FROM localization_text t WHERE t.keyword = 'link-language-prefix-warning' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'mn');
+INSERT INTO localization_text_content (parent_id, code, text) SELECT t.id, 'en', 'This page is not in the default language. A local path to a site page must carry the language prefix, otherwise visitors are switched to the default language. Correct form:' FROM localization_text t WHERE t.keyword = 'link-language-prefix-warning' AND NOT EXISTS (SELECT 1 FROM localization_text_content c WHERE c.parent_id = t.id AND c.code = 'en');
+UPDATE pages SET link = CONCAT('/en', link) WHERE code = 'en' AND category = '_raptor_sample_' AND link IN ('/news/type/all', '/products', '/contact');
+```
+
+Product links saved before this release are not re-validated; to find stored values the new check would reject: `SELECT id, title, link FROM products WHERE link <> '' AND link NOT LIKE '/%' AND link NOT LIKE 'http://%' AND link NOT LIKE 'https://%' AND link NOT LIKE 'mailto:%' AND link NOT LIKE 'tel:%';`
+
+---
+
 ## [5.4.5] - 2026-10-01
 [5.4.5]: https://github.com/codesaur-php/Raptor/compare/v5.4.4...v5.4.5
 

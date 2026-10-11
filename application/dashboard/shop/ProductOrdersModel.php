@@ -18,15 +18,24 @@ use codesaur\DataObject\Constants;
  *
  * Хүснэгтийн талбарууд:
  *   - id (bigint, primary) - Захиалгын өвөрмөц дугаар
- *   - product_id (bigint) - Бүтээгдэхүүний ID (FK -> products)
- *   - product_title (varchar 255) - Бүтээгдэхүүний нэр
+ *   - product_id (bigint) - Бүтээгдэхүүний ID (FK -> products). Зөвхөн нэг
+ *     бүтээгдэхүүнтэй захиалгад бөглөгдөнө, олон бүтээгдэхүүнтэй бол NULL
+ *   - product_title (varchar 255) - Бүтээгдэхүүний нэр, олон бүтээгдэхүүнтэй
+ *     бол "Нэр x2, Нэр x1" хураангуй (жагсаалт, хайлт, имэйл, Discord)
+ *   - items (text) - Захиалгын мөрүүд JSON: [{product_id, title, price, quantity}].
+ *     Захиалах үеийн нэр, үнийн хуулбар. Хоосон (NULL) бол хуучин нэг
+ *     бүтээгдэхүүнтэй захиалга - product_id/product_title/quantity-г уншина
+ *   - total (decimal 12,2) - Захиалгын нийт дүн
  *   - customer_name (varchar 128) - Захиалагчийн нэр
  *   - customer_email (varchar 128) - Захиалагчийн имэйл
  *   - customer_phone (varchar 32) - Захиалагчийн утас
+ *   - customer_address (text) - Хүргүүлэх хаяг
  *   - message (text) - Захиалагчийн тэмдэглэл
- *   - quantity (int, default: 1) - Тоо ширхэг
+ *   - quantity (int, default: 1) - Нийт тоо ширхэг
  *   - code (varchar 2) - Хэлний код
  *   - status (varchar 32, default: 'new') - Захиалгын төлөв
+ *   - stock_reduced (tinyint, default: 0) - Бүтээгдэхүүний үлдэгдлээс хасагдсан эсэх
+ *     (OrdersController::updateStatus() баталгаажуулахад хасаж, цуцлахад буцаана)
  *
  * @package Dashboard\Shop
  */
@@ -48,13 +57,17 @@ class ProductOrdersModel extends Model
            (new Column('id', 'bigint'))->primary(),
             new Column('product_id', 'bigint'),
             new Column('product_title', 'varchar', 255),
+            new Column('items', 'text'),
+           (new Column('total', 'decimal', '12,2'))->default(0),
             new Column('customer_name', 'varchar', 128),
             new Column('customer_email', 'varchar', 128),
             new Column('customer_phone', 'varchar', 32),
+            new Column('customer_address', 'text'),
             new Column('message', 'text'),
            (new Column('quantity', 'int'))->default(1),
             new Column('code', 'varchar', Constants::DEFAULT_CODE_LENGTH),
            (new Column('status', 'varchar', 32))->default('new'),
+           (new Column('stock_reduced', 'tinyint'))->default(0),
             new Column('created_at', 'datetime'),
             new Column('created_by', 'bigint'),
             new Column('updated_at', 'datetime'),

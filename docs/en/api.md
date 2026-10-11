@@ -812,6 +812,8 @@ Shared middleware for both Dashboard and Web apps. Constructor accepts a nullabl
 
 Resolution order: the `language_prefix` request attribute (set by `public_html/index.php` from a `/xx/` URL prefix; an inactive code throws a 404) -> the session value (only when a session key was given) -> the default language (first active language). On the public web the default language has no prefix (`/news/x`), every other language is prefixed (`/en/news/x`); the prefix is the Web application's mount path, so `|link` / `generateRouteLink()` prepend it automatically.
 
+Treat the default language as an install-time decision. Changing it on a live site swaps the URL structure: `/news/x` starts serving the new default language, while search-engine indexes, backlinks and shared links still expect the old one, and every hand-written local path (page `link` fields, links inside content) points to the wrong language. If the default must change, plan it as a migration: rewrite the stored local paths and add 301 redirects from the old URLs.
+
 Injects `localization` array into request attributes:
 
 ```php
@@ -1360,7 +1362,8 @@ Central router that registers all content module routes: News, Comments, Pages, 
 | `barcode` | varchar(64) | Barcode |
 | `sizes` | text | Available sizes |
 | `colors` | text | Available colors |
-| `stock` | int, default 0 | Stock quantity |
+| `manage_stock` | tinyint, default 0 | Track stock (1 = ordering closes at stock 0, 0 = unlimited) |
+| `stock` | int, default 0 | Stock quantity (when manage_stock=1) |
 | `link` | varchar(255) | External link |
 | `photo` | varchar(255) | Cover image |
 | `code` | varchar(2) | Language code, or `*` for a language-neutral record shown on every language |
@@ -1398,10 +1401,12 @@ Extracts a plain-text excerpt from HTML content.
 | `customer_name` | varchar(128) | Customer name |
 | `customer_email` | varchar(128) | Customer email |
 | `customer_phone` | varchar(32) | Customer phone |
+| `customer_address` | text | Delivery address |
 | `message` | text | Customer message |
 | `quantity` | int (default: 1) | Quantity |
 | `code` | varchar(2) | Language code |
 | `status` | varchar(32, default: 'new') | Order status |
+| `stock_reduced` | tinyint (default: 0) | 1 = quantity subtracted from product stock (set on confirmed/shipped/completed, cleared on cancel) |
 | `created_at` | datetime | Created date |
 | `created_by` | bigint | Created by user (FK -> users) |
 | `updated_at` | datetime | Updated date |

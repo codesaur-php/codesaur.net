@@ -23,6 +23,7 @@ class PermissionsSeed
         $permissions = [
             // Log
             ['module' => 'log',          'name' => 'logger',                'description' => 'View system access logs and activity history'],
+            ['module' => 'log',          'name' => 'audit',                 'description' => 'View what any user did across all logs (own organization only outside the system organization)'],
 
             // RBAC
             ['module' => 'user',         'name' => 'rbac',                  'description' => 'Manage roles and assign permissions to users'],
@@ -63,6 +64,9 @@ class PermissionsSeed
 
             // Development
             ['module' => 'development',  'name' => 'development',           'description' => 'Manage all development requests and respond to others'],
+
+            // Mail
+            ['module' => 'mail',         'name' => 'mail_send',             'description' => 'Send email to users by role or selection (own organization only outside the system organization)'],
         ];
 
         $stmt = $pdo->prepare(

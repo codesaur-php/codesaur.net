@@ -98,7 +98,13 @@ JSON хариулт хэвлэх. `Content-Type: application/json` header тох
 Route нэрээр 302 redirect хийх. `exit` дуудна.
 
 #### `log(string $table, string $level, string $message, array $context = []): void`
-Мэдээллийн баазийн `{$table}_log` нэртэй хүснэгт рүү системийн лог бичих. Server request metadata болон хэрэглэгчийн мэдээлэл автоматаар нэмэгдэнэ.
+Мэдээллийн баазийн `{$table}_log` нэртэй хүснэгт рүү системийн лог бичих. Server request metadata (`requestMeta()`) болон хэрэглэгчийн мэдээлэл автоматаар нэмэгдэнэ; request body, upload файл автоматаар орохгүй - зөвхөн хэрэгтэйгээ дамжуулна (insert - `payload`, update - `changes`, view - зөвхөн `record_id`).
+
+#### `requestMeta(): array`
+Лог бүрд бичигдэх request metadata: хэлний код, method, target, IP хаяг, user agent (body, файлгүй).
+
+#### `recordChanges(array $before, array $after, array $ignore = ['updated_at', 'updated_by']): array`
+Update лог-д зөвхөн өөрчлөгдсөн талбаруудыг `['field' => ['old' => ..., 'new' => ...]]` хэлбэрээр буцаана. Nested массивыг (LocalizedModel-ийн `localized`) рекурсив харьцуулна; харьцуулалт сул (`'1' == 1`, `null == ''`).
 
 #### `dispatch(object $event): void`
 DI container-ийн `EventDispatcher` сервисээр PSR-14 event дамжуулах. Dispatcher байхгүй бол чимээгүй алгасна.
@@ -693,6 +699,7 @@ HTML контентоос товч хураангуй гаргах.
 | `/dashboard/pages/table` | GET | `pages-table` |
 | `/dashboard/pages/list` | GET | `pages-list` |
 | `/dashboard/pages/insert` | GET+POST | `page-insert` |
+| `/dashboard/pages/sort` | PUT | `pages-sort` |
 | `/dashboard/pages/{uint:id}` | GET+PUT | `page-update` |
 | `/dashboard/pages/view/{uint:id}` | GET | `page-view` |
 | `/dashboard/pages/delete` | DELETE | `page-delete` |
@@ -870,6 +877,19 @@ PSR-3 стандартын лог систем. Өгөгдлийн санд ха
 | `/dashboard/logs/view` | GET | `logs-view` |
 | `/dashboard/logs/retrieve` | POST | `logs-retrieve` |
 | `/dashboard/logs/error-log-read` | GET | `error-log-read` |
+| `/dashboard/user-activity` | GET | `user-activity` |
+| `/dashboard/user-activity/retrieve` | GET | `user-activity-retrieve` |
+| `/dashboard/user-activity/export` | GET | `user-activity-export` |
+
+`/user-activity` нь санаатайгаар `/logs`-оос гадна: sidebar prefix-ээр (`href.startsWith`) идэвхжүүлдэг тул `/logs/...` байвал Хандалтын протокол ч идэвхтэй болно.
+
+### LogsController - Хэрэглэгчийн үйл ажиллагаа
+
+| Method | Тайлбар |
+|--------|---------|
+| `userActivity()` | Хуудас: хэрэглэгчийн жагсаалт (идэвхгүй нь ч орно; системийн бус байгууллагад зөвхөн тэр байгууллагын гишүүд), логийн хүснэгтүүд. `system_audit` эрх шаардана |
+| `userActivityExport()` | Ижил query-гийн (`auditQuery()` + `auditRows()`) CSV, хамгийн ихдээ `AUDIT_EXPORT_LIMIT` (10000) мөр, UTF-8 BOM, `=` `+` `-` `@` tab CR-ээр эхэлсэн нүдний урд `'`. `user-activity-export`-г мөрийн тоотой логт бичнэ |
+| `userActivityRetrieve()` | JSON `{rows, limit}`. Query: `mode` (`user` анхдагч, эсвэл `org`: `org_id` байгууллагын бүх гишүүний үйлдэл, `COALESCE(record_organization_id, auth_user.organization_id)`-аар, `user_id` нь заавал биш - үйлдэл хийсэн хүнээр шүүнэ, зөвхөн `view=actions`; бусад байгууллагын аудиторын `org_id` нь өөрийн идэвхтэй байгууллага, өөр бол 403, `system_coder`-ийн үйлдэл орохгүй), `user_id` (`user` горимд заавал), `view` (`AUDIT_VIEWS`: `actions`, `received`, `logins`, `emails`, `deleted`), `group` (зөвхөн `actions`-д: `ACTION_GROUPS`-ийн түлхүүр - `create`, `update`, `delete`, `view`, `session`; бүр нь action нэрс + LIKE загвартай, тогтмолоос орно, client-ээс биш), `table`, `from`, `to` (`YYYY-MM-DD`), `offset`; 50 мөр, шинэ нь эхэнд. Логийн view-үүд тохирох `*_log` хүснэгтүүдийг нэг `UNION ALL`-аар уншина (хүснэгтийн нэр зөвхөн DB-ийн жагсаалтаас, client-ээс шууд орохгүй), мөр бүрийг `Logger::normalizeLogRecord()`-аар (одоо public) форматлана; `deleted` нь `trash`-аас уншина. Системийн бус байгууллагаар нэвтэрсэн бол хэрэглэгч тэр байгууллагын гишүүн, `system_coder` биш байх ёстой (403), `actions` / `received` нь зөвхөн тэр `auth_user.organization_id`-тай бүртгэлийг, `logins` нь зөвхөн тэр байгууллага руу орсон / гарсан / амжилтгүй оролдлогыг буцаана, `UNSCOPABLE_VIEWS` (`emails`, `deleted`) 403. Эхний хуудас `user-activity-view`-г `target_user_id` / `target_organization_id`, шүүлтийн хамт логт бичнэ. Бүх шалгалт, байгууллагын дүрэм `auditQuery()`-д, export-тэй хуваалцана |
 
 ---
 
@@ -880,6 +900,26 @@ PSR-3 стандартын лог систем. Өгөгдлийн санд ха
 **Файл:** `application/dashboard/mail/Mailer.php`
 
 И-мэйл илгээх. `send()` нь `RAPTOR_MAIL_TRANSPORT` .env тохиргоогоор transport сонгоно: `brevo` (анхдагч), `smtp`, `mail`.
+
+### MailController
+
+**Файл:** `application/dashboard/mail/MailController.php` - Систем - Имэйл илгээх хуудас (`DashboardTrait`).
+
+| Method | Тайлбар |
+|--------|---------|
+| `index()` | Хуудас: дүрүүд хүлээн авагчийн тоотой, хайлтад хэрэглэгчийн жагсаалт. `system_mail_send` эрх шаардана |
+| `send()` | POST, хоёр горимтой. `mode=prepare` `{subject, body, role_ids, user_ids}`: хүлээн авагчийг сервер тогтоож (идэвхтэй, зөв имэйлтэй, давхардалгүй, хамгийн ихдээ `MAX_RECIPIENTS` 1000) илгээхгүйгээр `{broadcast_id, recipients, ids, batch_size, preview: {email, subject}}` буцаана - гарчиг, агуулгыг эхний хүлээн авагчаар туршиж рэндэрлэнэ (алдаатай template -> 400); `mail-broadcast-start` (бүтэн текст) логт бичнэ. `mode=batch` `{subject, body, broadcast_id, user_ids, role_ids}` (хамгийн ихдээ `BATCH_SIZE` 20 id; хэнд илгээхийг зөвхөн `user_ids` тогтооно, `role_ids` нь зөвхөн `role` хувьсагчийн утгыг тодорхойлно): id бүрийг дахин шалгаж (идэвхгүй / хасагдсан / өөр байгууллагын нь алгасагдана) хүн бүрт гарчиг, агуулгыг тэр хүний өөрийн мэдээллээр тусад нь рэндэрлэж имэйл илгээн `{sent, failed, skipped}` буцаана; `mail-broadcast` логт бичнэ |
+| `personalize()` | Private. Гарчиг / агуулгыг `MemoryTemplate`-ээр рэндэрлэнэ (autoescape унтраалттай - гарчиг энгийн текст, рэндэрлэсэн агуулгыг `bodyHtml()` бүхэлд нь escape хийнэ), зөвхөн скаляр хувьсагчтай: `name`, `first_name`, `last_name`, `username`, `email`, `phone`, `role`, `role_description`, `roles`, `organization`, `sender_name`, `sender_email`, `site`, `date`. Тодорхойгүй хувьсагч хоосон болно |
+| `enrich()` | Private. Нэмэлт query шаарддаг template өгөгдөл: хүлээн авагч бүрт байгаа сонгосон дүрүүд (`role` = хуудсан дээрх дарааллаар эхнийх, `role_description`, `roles`) ба идэвхтэй байгууллагууд (системийн бус байгууллагаар нэвтэрсэн бол зөвхөн тэр байгууллага) |
+
+Байгууллага дотроо илгээх: `system_coder` эсвэл системийн байгууллагаар (`id=1`) нэвтэрсэн хэрэглэгч бүх хэрэглэгчид хүрнэ; бусад нь зөвхөн одоогийн байгууллагын гишүүдэд (`organizations_users`) - дүрийн тоо, хэрэглэгчийн жагсаалт, хүлээн авагчийн query бүгдэд.
+
+### MailRouter - Маршрутууд
+
+| Маршрут | Method | Нэр |
+|---------|--------|-----|
+| `/dashboard/mail-send` | GET | `mail-send` |
+| `/dashboard/mail-send/send` | POST (CSRF) | `mail-send-post` |
 
 ---
 
@@ -1076,7 +1116,7 @@ POST `/dashboard/content/moedit/ai` - Хоёр горимтой:
 Dashboard sidebar-д модуль тус бүрийн уншаагүй үйлдлийн тоог badge-ээр харуулах систем. `*_log` хүснэгтүүдээс уншина.
 
 #### `list(): void`
-GET `/dashboard/badges` - Модуль бүрийн badge тоог JSON-оор буцаана. Өнгө: ногоон=create, цэнхэр=update, улаан=delete, info=шинэ сэтгэгдэл/үнэлгээ. Админы эрхээр (`PERMISSION_MAP`) шүүнэ. Өөрийн үйлдлийг тоолохгүй - `/trash`-аас бусад (өөрийн устгасныг тэнд харуулах зорилготой). `orgScopedModules()`-д (default хоосон) жагсаасан модулиудыг харж буй админы одоогийн байгууллагаар нэмж шүүнэ - `system_coder` эсвэл `isSystemWideViewer()` (одоогийн байгууллага `id=1`) бол шүүхгүй. `/manual`, `/migrations` нь лог биш файлын тоогоор badge авна. Шинэ хэрэглэгчид 30 хоногийн lookback.
+GET `/dashboard/badges` - Модуль бүрийн badge тоог JSON-оор буцаана. Өнгө: ногоон=create, цэнхэр=update, улаан=delete, info=шинэ сэтгэгдэл/үнэлгээ. Админы эрхээр (`PERMISSION_MAP`) шүүнэ. Өөрийн үйлдлийг тоолохгүй - `/trash`-аас бусад (өөрийн устгасныг тэнд харуулах зорилготой). `orgScopedModules()`-д (default хоосон) жагсаасан модулиудыг харж буй админы одоогийн байгууллагаар нэмж шүүнэ - `system_coder` эсвэл `isSystemWideViewer()` (одоогийн байгууллага `id=1`) бол шүүхгүй. `/manual`, `/migrations` нь лог биш файлын тоогоор badge авна. Үйлдэл биш, өөрчлөгдсөн бичлэгийг тоолно: өнгө тус бүрд DISTINCT `record_id` (`record_id`-гүй үйлдэл тус бүрдээ), хамгийн ихдээ сүүлийн `WINDOW_DAYS` (30) хоногийг - `max(checked_at, now - 30 хоног)`.
 
 #### `seen(): void`
 POST `/dashboard/badges/seen` - Модулийг уншсан гэж тэмдэглэнэ. `checked_at` timestamp шинэчилнэ.
@@ -1125,7 +1165,7 @@ Dashboard sidebar цэсний олон хэлтэй, parent/child бүтэцт�
 | `href` | varchar(255) | Цэсний холбоос URL |
 | `alias` | varchar(64) | Байгууллагын alias шүүлтүүр |
 | `permission` | varchar(128) | Цэсийг харахад шаардагдах эрх |
-| `position` | smallint (default: 100) | Дэс дараалал |
+| `position` | smallint (default: 100) | Дэс дараалал - цэсний хуудсанд чирж тохируулна (`manageMenuSort()` бүх мөрийг модны дарааллаар дахин дугаарлана), шинэ цэс `MAX(position) + 1` |
 | `is_visible` | tinyint (default: 1) | Харагдах эсэх |
 | `created_at` | datetime | Үүсгэсэн огноо |
 | `created_by` | bigint | Үүсгэсэн хэрэглэгч (FK -> users) |

@@ -13,6 +13,7 @@ use Dashboard\Shop\ProductsModel;
 
 use Web\Portal\PortalContent;
 use Web\Portal\DocsController;
+use Web\Portal\PortalReleases;
 
 /**
  * Class SeoController
@@ -161,7 +162,7 @@ class SeoController extends TemplateController
         // codesaur.net портал: Raptor, багцууд, баримт бичиг (статик, DB-гүй).
         // Порталын агуулга хэл бүр дээр байдаг тул URL бүр нь хэлний prefix-тэй.
         foreach ($prefixes as $code => $prefix) {
-            foreach (['/raptor', '/packages', '/docs'] as $path) {
+            foreach (['/raptor', '/packages', '/docs', '/releases'] as $path) {
                 $urls[] = [
                     'loc' => $baseUrl . $prefix . $path,
                     'changefreq' => 'weekly',
@@ -288,7 +289,7 @@ class SeoController extends TemplateController
         // Site settings
         $settings = $this->getAttribute('settings', []);
         $siteTitle = $settings['title'] ?? 'Raptor';
-        $siteDescription = $settings['description'] ?? '';
+        $siteDescription = PortalContent::texts($code)['seo_home_description'];
 
         // Latest 20 news
         $news_table = (new NewsModel($this->pdo))->getName();
@@ -316,7 +317,21 @@ class SeoController extends TemplateController
         // (хуучин өгөгдөл) - strtotime(null) нь PHP 8.1+ дээр deprecation
         // сануулга өгч code.log бохирдуулдаг тул null хамгаалалт хийнэ.
         // published_at-гүй мөрүүд 0 гэж тооцогдон жагсаалтын сүүлд орно.
-        $items = \array_merge($news_items, $product_items);
+        // Портал: Raptor болон codesaur багцуудын хувилбарууд (CHANGELOG.md-ээс) -
+        // мэдээ бичихгүй байсан ч feed хоосон үлдэхгүй
+        $release_items = [];
+        $cache = $this->hasService('cache') ? $this->getService('cache') : null;
+        foreach (PortalReleases::latest($cache, 20) as $release) {
+            $release_items[] = [
+                'title' => $release['name'] . ' ' . $release['version'],
+                'link' => $baseUrl . '/docs/' . $release['key'] . '/changelog#' . $release['anchor'],
+                'description' => $release['name'] . ' v' . $release['version'] . ' (' . $release['date'] . ')',
+                'published_at' => $release['date'] . ' 00:00:00',
+                'feed_type' => 'release',
+            ];
+        }
+
+        $items = \array_merge($news_items, $product_items, $release_items);
         \usort($items, function ($a, $b) {
             $a_time = empty($a['published_at']) ? 0 : (\strtotime($a['published_at']) ?: 0);
             $b_time = empty($b['published_at']) ? 0 : (\strtotime($b['published_at']) ?: 0);
@@ -339,8 +354,12 @@ class SeoController extends TemplateController
         echo '  <atom:link href="' . \htmlspecialchars($baseUrl . '/rss') . '" rel="self" type="application/rss+xml"/>' . "\n";
 
         foreach ($items as $item) {
-            $prefix = ($item['feed_type'] ?? 'news') === 'product' ? '/product/' : '/news/';
-            $link = $baseUrl . $prefix . $item['slug'];
+            if (isset($item['link'])) {
+                $link = $item['link'];
+            } else {
+                $prefix = ($item['feed_type'] ?? 'news') === 'product' ? '/product/' : '/news/';
+                $link = $baseUrl . $prefix . $item['slug'];
+            }
             // published_at NULL бол одоогийн цагаар fallback хийнэ - strtotime(null)
             // deprecation өгөхөөс гадна false -> 0 болж 1970 оны огноо гарна
             $pub_time = empty($item['published_at']) ? \time() : (\strtotime($item['published_at']) ?: \time());

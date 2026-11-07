@@ -44,9 +44,10 @@ class DocsController extends TemplateController
         }
         unset($package);
 
+        $this->allowBrowserCache();
         $this->webTemplate(__DIR__ . '/docs.html', [
             'layout' => 'portal',
-            'title' => $t['docs_title'],
+            'title' => $t['seo_docs_title'],
             'description' => $t['docs_lead'],
             'lang' => $lang,
             't' => $t,
@@ -108,6 +109,7 @@ class DocsController extends TemplateController
         $package['key'] = $key;
         $packages = PortalContent::packages();
 
+        $this->allowBrowserCache();
         $this->webTemplate(__DIR__ . '/doc.html', [
             'layout' => 'portal',
             'title' => $pageTitle . ' - ' . $package['name'],
@@ -120,7 +122,7 @@ class DocsController extends TemplateController
             'doc' => $doc,
             'doc_html' => $rendered['html'],
             'toc' => $toc,
-            'github_file' => $package['github'] . '/blob/HEAD/' . $entry['relative'],
+            'github_file' => ($entry['github'] ?? $package['github']) . '/blob/HEAD/' . $entry['relative'],
             'lang_fallback' => $entry['fallback'],
         ])->render();
 
@@ -167,6 +169,23 @@ class DocsController extends TemplateController
 
         if (\is_file("$base/README.md")) {
             $docs['readme'] = ['title' => $t['doc_readme'], 'path' => "$base/README.md", 'relative' => 'README.md', 'fallback' => false];
+        }
+        // Raptor-ийн 20 минутын заавар: портал өөрөө эзэмшдэг (application/web/portal/tutorial/),
+        // Raptor upstream-ийн docs/-д байхгүй тул GitHub холбоос нь codesaur.net репо руу заана
+        if ($key === 'raptor') {
+            foreach ([$lang, 'en', 'mn'] as $code) {
+                $path = __DIR__ . "/tutorial/TUTORIAL-$code.md";
+                if (\is_file($path)) {
+                    $docs['tutorial'] = [
+                        'title' => $t['doc_tutorial'],
+                        'path' => $path,
+                        'relative' => "application/web/portal/tutorial/TUTORIAL-$code.md",
+                        'fallback' => $code !== $lang,
+                        'github' => PortalContent::PORTAL_REPO,
+                    ];
+                    break;
+                }
+            }
         }
         $localized('README.md', 'guide', $t['doc_guide']);
         $localized('api.md', 'api', $t['doc_api']);

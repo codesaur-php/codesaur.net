@@ -66,6 +66,13 @@ class TemplateController extends \Dashboard\Controller
      */
     public function webTemplate(string $template, array $vars = []): FileTemplate
     {
+        // Browser-ийн мэдрэмтгий API-уудыг (камер, микрофон, байршил...) вэб
+        // сайтын бүх хуудсанд хаана. Бусад security header (HSTS, nosniff,
+        // Referrer-Policy, X-Frame-Options) nginx дээр тавигддаг.
+        if (!\headers_sent()) {
+            \header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()');
+        }
+
         $index = $this->template(__DIR__ . '/index.html');
         $content = $this->template($template, $vars);
         $content->addFilter('basename', fn(string $path): string => \rawurldecode(\basename($path)));
@@ -79,6 +86,16 @@ class TemplateController extends \Dashboard\Controller
             if (isset($vars[$key]) && $vars[$key] !== '' && $vars[$key] !== '*') {
                 $index->set($indexKey, $vars[$key]);
             }
+        }
+
+        // Structured data (schema.org JSON-LD). PHP талд JSON_HEX_TAG-аар
+        // encode хийж Markup-аар дамжуулна - '<' нь < болж </script>-ээр
+        // гарах боломжгүй, template autoescape үүнийг дахин escape хийхгүй.
+        if (!empty($vars['json_ld']) && \is_array($vars['json_ld'])) {
+            $index->set('json_ld', new \codesaur\Template\Markup((string) \json_encode(
+                $vars['json_ld'],
+                \JSON_HEX_TAG | \JSON_HEX_AMP | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES
+            )));
         }
 
         // Layout сонголт: 'portal' бол контент өөрийн window/dialog-той тул
@@ -170,6 +187,31 @@ class TemplateController extends \Dashboard\Controller
             ? $this->text('something-went-wrong')
             : $err->getMessage();
         $this->respondJSON(['message' => $message], $status);
+    }
+
+    /**
+     * Статик хуудсанд browser-ийн богино хугацааны кэш зөвшөөрөх.
+     *
+     * SessionMiddleware session_start() хийхэд PHP-ийн session.cache_limiter
+     * (nocache) нь "Cache-Control: no-store, no-cache" + Pragma + Expires
+     * илгээдэг тул давтан зочлогч хуудсыг бүтнээр нь дахин татдаг. Агуулга нь
+     * кодоос ирдэг портал хуудсууд (нүүр, /raptor, /packages, /docs, /releases)
+     * үүнийг render-ээс өмнө дуудаж тэр header-уудыг дарна.
+     *
+     * 'private' - зөвхөн хэрэглэгчийн browser кэшлэнэ (proxy/CDN биш), учир нь
+     * layout-ын сагсны тоо session-оос хамаардаг.
+     *
+     * @param int $seconds max-age
+     * @return void
+     */
+    protected function allowBrowserCache(int $seconds = 300): void
+    {
+        if (\headers_sent()) {
+            return;
+        }
+        \header_remove('Pragma');
+        \header_remove('Expires');
+        \header("Cache-Control: private, max-age=$seconds");
     }
 
     /**

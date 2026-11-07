@@ -35,6 +35,12 @@ class PortalContent
     public const DISCUSSIONS = 'https://github.com/orgs/codesaur-php/discussions';
 
     /**
+     * Энэ порталын (codesaur.net) өөрийн репо - портал эзэмшдэг баримтын
+     * (жишээ нь Raptor-ийн 20 минутын заавар) "GitHub дээр үзэх" холбоос.
+     */
+    public const PORTAL_REPO = self::GITHUB_ORG . '/codesaur.net';
+
+    /**
      * Aikido Intel дээрх codesaur багцуудын жагсаалт.
      *
      * Aikido Intel нь нээлттэй эхийн багцуудыг хамаарлын эрүүл мэнд,
@@ -62,6 +68,41 @@ class PortalContent
     public static function aikidoLink(string $name): string
     {
         return "https://intel.aikido.dev/packages/packagist/$name";
+    }
+
+    /**
+     * Нэг багцын schema.org SoftwareSourceCode бүтэц (JSON-LD).
+     *
+     * TemplateController::webTemplate() нь 'json_ld' хувьсагчийг
+     * <script type="application/ld+json"> болгон layout-д хэвлэнэ.
+     *
+     * @param array  $package withInstalledVersions()-оор баяжуулсан багц
+     * @param string $lang    'mn' эсвэл 'en'
+     * @param string $url     Хуудасны бүтэн URL
+     * @return array<string, mixed>
+     */
+    public static function jsonLd(array $package, string $lang, string $url): array
+    {
+        $data = [
+            '@context' => 'https://schema.org',
+            '@type' => 'SoftwareSourceCode',
+            'name' => $package['name'],
+            'description' => $package['summary'][$lang],
+            'url' => $url,
+            'codeRepository' => $package['github'],
+            'programmingLanguage' => 'PHP',
+            'runtimePlatform' => 'PHP 8.2.1+',
+            'license' => 'https://opensource.org/licenses/MIT',
+            'author' => [
+                '@type' => 'Person',
+                'name' => 'Narankhuu',
+                'url' => 'https://github.com/codesaur',
+            ],
+        ];
+        if (!empty($package['version'])) {
+            $data['version'] = \ltrim((string) $package['version'], 'v');
+        }
+        return $data;
     }
 
     /**
@@ -99,12 +140,12 @@ class PortalContent
                 'requires' => ['PHP 8.2.1+', 'Composer', 'MySQL / PostgreSQL', 'ext-gd', 'ext-intl'],
                 'install' => 'composer create-project codesaur/raptor my-project',
                 'summary' => [
-                    'mn' => 'Цэвэр архитектуртай объект хандалттай веб хөгжүүлэлтийн фреймворк',
-                    'en' => 'Clean architecture object-oriented web development framework',
+                    'mn' => 'Админ панель, RBAC, олон хэлний CMS-тэй бэлэн PHP суурь төсөл (starter)',
+                    'en' => 'A ready-made PHP starter project with an admin panel, RBAC and a multi-language CMS',
                 ],
                 'description' => [
-                    'mn' => 'PSR стандартууд дээр суурилсан, олон давхаргат архитектуртай, олон байгууллагын (multi-tenant) RBAC эрхийн удирдлагатай, бүрэн CMS боломжтой PHP веб фреймворк. Анхдагч байдлаараа Web (нийтийн вебсайт) болон Dashboard (админ панель) гэсэн хоёр апп-тай ирдэг бөгөөд codesaur экосистемийн бусад багцуудыг нэгтгэн ажилладаг.',
-                    'en' => 'A multi-layered, multi-tenant, full-featured CMS PHP web framework built on PSR standards with RBAC access control. It ships with two apps by default - Web (public website) and Dashboard (admin panel) - and brings the other codesaur ecosystem packages together into one working system.',
+                    'mn' => 'codesaur багцууд дээр суурилсан, PSR стандартад нийцсэн бэлэн суурь төсөл (starter): олон байгууллагын (multi-tenant) RBAC, бүрэн CMS, админ панель анхнаасаа ажиллаж байдаг. composer create-project-оор үүсгэсний дараа application/ доторх код бүхэлдээ таны төслийн код болно - шууд засаж өөрийн төсөлд тохируулна. Харин түүний суурь болсон codesaur багцууд vendor/-т сууж composer update-ээр шинэчлэгддэг. Web (нийтийн вебсайт) болон Dashboard (админ панель) гэсэн хоёр апп-тай ирнэ.',
+                    'en' => 'A PSR-compliant starter project built on the codesaur packages: multi-tenant RBAC, a full CMS and an admin panel work from day one. After composer create-project the code under application/ is your own project code - edit it directly to fit your project - while the codesaur packages underneath live in vendor/ and update with composer update. It ships with two apps - Web (public website) and Dashboard (admin panel).',
                 ],
                 'features' => [
                     'mn' => [
@@ -774,8 +815,8 @@ PHP,
                 'search_portal' => 'Портал',
 
                 'hero_kicker' => 'codesaur ecosystem',
-                'hero_title' => 'Монгол программистын бүтээсэн PHP фреймворк ба багцууд',
-                'hero_lead' => 'Raptor фреймворк болон түүний суурь болсон PSR стандартын бие даасан багцууд - цэвэр архитектур, объект хандалтат код, гадны хамаарал хамгийн бага. Нээлттэй эх, MIT лиценз.',
+                'hero_title' => 'Монгол хэлээр бүрэн баримтжуулсан PHP суурь төсөл ба багцууд',
+                'hero_lead' => 'Raptor - админ панель, RBAC, олон хэлний CMS-тэй бэлэн суурь төсөл (starter), мөн түүний суурь болсон PSR стандартын бие даасан багцууд. Код нь жижиг, уншиж ойлгоход хялбар; баримт нь монгол, англи хоёр хэлээр. Нээлттэй эх, MIT лиценз.',
                 'hero_start' => 'Эхлэх',
                 'hero_packages' => 'Багцуудыг үзэх',
                 'hero_github' => 'GitHub дээр үзэх',
@@ -787,7 +828,7 @@ PHP,
                 'stat_db' => 'Өгөгдлийн сан',
 
                 'eco_title' => 'Экосистемийн багцууд',
-                'eco_lead' => 'Багц бүр бие даасан, ямар ч PHP төсөлд Composer-оор суулгаж ашиглаж болно. Raptor нь эдгээрийг нэгтгэн бүрэн фреймворк болгодог.',
+                'eco_lead' => 'Багц бүр бие даасан, ямар ч PHP төсөлд (Laravel, Symfony, Slim ч бай) Composer-оор суулгаж ашиглаж болно. Raptor нь эдгээрийг нэгтгэн ажиллаж байгаа бэлэн систем болгодог.',
                 'eco_all' => 'Бүх багцууд',
 
                 'why_title' => 'Яагаад Raptor?',
@@ -798,7 +839,7 @@ PHP,
                 'why_2_title' => 'Multi-tenant RBAC',
                 'why_2_text' => 'Олон байгууллага, дүр, эрхийн нарийн зохицуулалт, JWT + Session нэвтрэлт бэлэн.',
                 'why_3_title' => 'Код бүхэлдээ таных',
-                'why_3_text' => 'vendor/-оос бусад бүх зүйл төслийн энгийн код - тусдаа "framework core" давхарга байхгүй, override хэрэггүй.',
+                'why_3_text' => 'application/ нь төслийн энгийн код - шууд засна, override хэрэггүй. Суурь багцууд vendor/-т сууж composer update-ээр шинэчлэгдэнэ; starter-ийн шинэ хувилбарыг CHANGELOG-оос харж хэрэгтэйгээ авна.',
                 'why_4_title' => 'MySQL + PostgreSQL',
                 'why_4_text' => 'Нэг кодоор хоёр driver дээр ажиллана. Хүснэгтүүд Model-оос автоматаар үүснэ.',
                 'why_5_title' => 'Аль ч орчинд ажиллана',
@@ -881,7 +922,43 @@ PHP,
                 'read_more' => 'Дэлгэрэнгүй',
                 'author' => 'Зохиогч',
                 'footer_ecosystem' => 'Экосистем',
-                'footer_about' => 'codesaur.net нь codesaur-php экосистемийн албан ёсны портал. Raptor фреймворк болон бүх багцууд MIT лицензээр нээлттэй.',
+                'footer_about' => 'codesaur.net нь codesaur-php экосистемийн албан ёсны портал. Raptor суурь төсөл болон бүх багцууд MIT лицензээр нээлттэй.',
+
+                'seo_home_title' => 'Raptor - PHP суурь төсөл ба PSR багцууд',
+                'seo_home_description' => 'Raptor - админ панель, multi-tenant RBAC, олон хэлний CMS-тэй бэлэн PHP суурь төсөл ба PSR-7/15 стандартын бие даасан Composer багцууд. Монгол, англи баримттай, MIT лиценз.',
+                'seo_raptor_title' => 'Raptor - админ, RBAC, CMS-тэй PHP суурь төсөл',
+                'seo_packages_title' => 'Багцууд - бие даасан PSR PHP компонентууд',
+                'seo_package_suffix' => 'PHP багц',
+                'seo_docs_title' => 'Баримт бичиг - Raptor ба codesaur багцууд',
+                'og_image_alt' => 'Raptor - PHP суурь төсөл ба PSR багцууд',
+
+                'stat_tests' => 'Тест',
+                'stat_zero_deps' => 'Хамааралгүй багц',
+                'stat_ci' => 'CI',
+                'stat_since' => 'Хөгжүүлэлт',
+                'stat_since_value' => '2021 оноос',
+
+                'code_title' => 'Өдөр тутмын код',
+                'code_lead' => 'Route, controller, template - нэг хуудас нэмэхэд хэрэгтэй бүх код. Бүрэн жишээг 20 минутын зааварт алхам алхмаар үзүүлсэн.',
+
+                'package_facts' => 'Тоо баримт',
+                'package_lines' => 'PHP кодын мөр',
+                'package_runtime_deps' => 'Composer хамаарал',
+                'package_no_deps' => 'байхгүй',
+                'package_test_count' => 'Тест метод',
+                'package_ci' => 'CI',
+
+                'nav_releases' => 'Шинэчлэл',
+                'releases_title' => 'Шинэчлэлүүд',
+                'releases_lead' => 'Raptor болон codesaur багцуудын сүүлийн хувилбарууд. Багц бүрийн CHANGELOG.md-ээс автоматаар бүрддэг - RSS-ээр ч дагаж болно.',
+                'releases_empty' => 'Хувилбарын мэдээлэл олдсонгүй.',
+                'releases_view' => 'Өөрчлөлтийг үзэх',
+
+                'doc_tutorial' => 'Заавар: 20 минутад блог',
+                'tutorial_cta' => 'Зааврыг эхлүүлэх',
+
+                'own_title' => 'Яагаад өөрсдөө бичсэн бэ?',
+                'own_text' => 'Laravel, Symfony, Twig, Guzzle зэрэг олон жил шалгагдсан, том нийгэмлэгтэй сангууд байгааг бид мэднэ - codesaur багцууд тэднээс "илүү" гэж хэлэхгүй. Зорилго нь хоёр: нэгд, PSR-7/15 вэб програм дотроо хэрхэн ажилладгийг хэдэн зуун мөрийн уншигдахуйц кодоор, монгол хэлээр ойлгуулах; хоёрт, бүх давхаргыг бүрэн хянадаг, гадны хамаарал багатай систем барих. Хэрэв таны төсөлд том баг, олон гуравдагч интеграц, бэлэн нийгэмлэг хамгийн чухал бол Laravel эсвэл Symfony зөв сонголт.',
             ],
             'en' => [
                 'nav_home' => 'Home',
@@ -894,8 +971,8 @@ PHP,
                 'search_portal' => 'Portal',
 
                 'hero_kicker' => 'codesaur ecosystem',
-                'hero_title' => 'A PHP framework and packages crafted by a Mongolian developer',
-                'hero_lead' => 'The Raptor framework and the standalone PSR-standard packages it is built on - clean architecture, object-oriented code, minimal external dependencies. Open source, MIT licensed.',
+                'hero_title' => 'A PHP starter project and packages, documented in Mongolian and English',
+                'hero_lead' => 'Raptor - a ready-made starter project with an admin panel, RBAC and a multi-language CMS - and the standalone PSR-standard packages it is built on. Small, readable code, fully documented in Mongolian and English. Open source, MIT licensed.',
                 'hero_start' => 'Get started',
                 'hero_packages' => 'Browse packages',
                 'hero_github' => 'View on GitHub',
@@ -907,7 +984,7 @@ PHP,
                 'stat_db' => 'Databases',
 
                 'eco_title' => 'Ecosystem packages',
-                'eco_lead' => 'Every package is standalone and installable into any PHP project via Composer. Raptor combines them into a complete framework.',
+                'eco_lead' => 'Every package is standalone and installable into any PHP project via Composer - Laravel, Symfony or Slim included. Raptor combines them into a working, ready-made system.',
                 'eco_all' => 'All packages',
 
                 'why_title' => 'Why Raptor?',
@@ -918,7 +995,7 @@ PHP,
                 'why_2_title' => 'Multi-tenant RBAC',
                 'why_2_text' => 'Multiple organizations, roles, fine-grained permissions and JWT + Session authentication out of the box.',
                 'why_3_title' => 'All the code is yours',
-                'why_3_text' => 'Everything outside vendor/ is plain project code - there is no separate "framework core" layer and nothing to override.',
+                'why_3_text' => 'application/ is plain project code - edit it directly, nothing to override. The core packages live in vendor/ and update with composer update; new starter releases are listed in the CHANGELOG so you pick what you need.',
                 'why_4_title' => 'MySQL + PostgreSQL',
                 'why_4_text' => 'One codebase runs on both drivers. Tables are created automatically from Model classes.',
                 'why_5_title' => 'Runs anywhere',
@@ -1001,7 +1078,43 @@ PHP,
                 'read_more' => 'Read more',
                 'author' => 'Author',
                 'footer_ecosystem' => 'Ecosystem',
-                'footer_about' => 'codesaur.net is the official portal of the codesaur-php ecosystem. The Raptor framework and every package are open source under the MIT license.',
+                'footer_about' => 'codesaur.net is the official portal of the codesaur-php ecosystem. The Raptor starter project and every package are open source under the MIT license.',
+
+                'seo_home_title' => 'Raptor - PHP starter project and PSR packages',
+                'seo_home_description' => 'Raptor - a ready-made PHP starter project with an admin panel, multi-tenant RBAC and a multi-language CMS, plus standalone PSR-7/15 Composer packages. Documented in English and Mongolian, MIT.',
+                'seo_raptor_title' => 'Raptor - PHP starter with admin, RBAC and CMS',
+                'seo_packages_title' => 'Packages - standalone PSR PHP components',
+                'seo_package_suffix' => 'PHP package',
+                'seo_docs_title' => 'Documentation - Raptor and codesaur packages',
+                'og_image_alt' => 'Raptor - PHP starter project and PSR packages',
+
+                'stat_tests' => 'Tests',
+                'stat_zero_deps' => 'Zero-dependency packages',
+                'stat_ci' => 'CI',
+                'stat_since' => 'In development',
+                'stat_since_value' => 'since 2021',
+
+                'code_title' => 'Everyday code',
+                'code_lead' => 'Route, controller, template - all the code it takes to add a page. The 20-minute tutorial walks through a complete example step by step.',
+
+                'package_facts' => 'Facts',
+                'package_lines' => 'Lines of PHP',
+                'package_runtime_deps' => 'Composer dependencies',
+                'package_no_deps' => 'none',
+                'package_test_count' => 'Test methods',
+                'package_ci' => 'CI',
+
+                'nav_releases' => 'Releases',
+                'releases_title' => 'Releases',
+                'releases_lead' => 'The latest versions of Raptor and the codesaur packages, built automatically from each package\'s CHANGELOG.md - also available as RSS.',
+                'releases_empty' => 'No release information found.',
+                'releases_view' => 'View changes',
+
+                'doc_tutorial' => 'Tutorial: a blog in 20 minutes',
+                'tutorial_cta' => 'Start the tutorial',
+
+                'own_title' => 'Why write our own?',
+                'own_text' => 'We know Laravel, Symfony, Twig and Guzzle are battle-tested libraries with huge communities - the codesaur packages do not claim to be "better" than them. The goals are two: first, to show how a PSR-7/15 web application works inside, through a few hundred readable lines and documentation in Mongolian; second, to build a system where every layer is under your control with few external dependencies. If a large team, many third-party integrations and a big community matter most to your project, Laravel or Symfony is the right choice.',
             ],
         ];
 

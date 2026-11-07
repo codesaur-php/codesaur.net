@@ -35,11 +35,14 @@ class PortalController extends TemplateController
         $t = PortalContent::texts($code);
         $packages = self::withInstalledVersions(PortalContent::packages());
         $raptor = $packages['raptor'];
+        $raptor['stats'] = PortalStats::package('raptor', $this->cacheService());
 
+        $this->allowBrowserCache();
         $this->webTemplate(__DIR__ . '/raptor.html', [
             'layout' => 'portal',
-            'title' => 'Raptor Framework',
+            'title' => $t['seo_raptor_title'],
             'description' => $raptor['summary'][$lang],
+            'json_ld' => PortalContent::jsonLd($raptor, $lang, $this->pageUrl()),
             'lang' => $lang,
             't' => $t,
             'raptor' => $raptor,
@@ -63,9 +66,10 @@ class PortalController extends TemplateController
         $code = $this->getLanguageCode();
         $t = PortalContent::texts($code);
 
+        $this->allowBrowserCache();
         $this->webTemplate(__DIR__ . '/packages.html', [
             'layout' => 'portal',
-            'title' => $t['packages_title'],
+            'title' => $t['seo_packages_title'],
             'description' => $t['packages_lead'],
             'lang' => PortalContent::lang($code),
             't' => $t,
@@ -102,11 +106,14 @@ class PortalController extends TemplateController
         $package['key'] = $key;
         $package['depends'] = self::codesaurDependencies($key);
         $package['docs'] = DocsController::availableDocs($key, $lang, $t);
+        $package['stats'] = PortalStats::package($key, $this->cacheService());
 
+        $this->allowBrowserCache();
         $this->webTemplate(__DIR__ . '/package.html', [
             'layout' => 'portal',
-            'title' => $package['name'],
+            'title' => $package['name'] . ' - ' . $t['seo_package_suffix'],
             'description' => $package['summary'][$lang],
+            'json_ld' => PortalContent::jsonLd($package, $lang, $this->pageUrl()),
             'lang' => $lang,
             't' => $t,
             'package' => $package,
@@ -116,6 +123,50 @@ class PortalController extends TemplateController
         ])->render();
 
         $this->log('web', LogLevel::NOTICE, '[{server_request.code}] {name} багцын хуудсыг уншиж байна', ['action' => 'portal-package', 'name' => $package['name']]);
+    }
+
+    /**
+     * Шинэчлэлүүд - бүх багцын сүүлийн хувилбарууд (CHANGELOG.md-ээс).
+     *
+     * @return void
+     */
+    public function releases()
+    {
+        $code = $this->getLanguageCode();
+        $t = PortalContent::texts($code);
+
+        $this->allowBrowserCache();
+        $this->webTemplate(__DIR__ . '/releases.html', [
+            'layout' => 'portal',
+            'title' => $t['releases_title'],
+            'description' => $t['releases_lead'],
+            'lang' => PortalContent::lang($code),
+            't' => $t,
+            'releases' => PortalReleases::latest($this->cacheService()),
+            'packages' => PortalContent::packages(),
+        ])->render();
+
+        $this->log('web', LogLevel::NOTICE, '[{server_request.code}] Шинэчлэлүүдийг уншиж байна', ['action' => 'portal-releases']);
+    }
+
+    /**
+     * Кэш сервис (байхгүй бол null - портал кэшгүй ч ажиллана).
+     *
+     * @return \Psr\SimpleCache\CacheInterface|null
+     */
+    private function cacheService(): ?\Psr\SimpleCache\CacheInterface
+    {
+        return $this->hasService('cache') ? $this->getService('cache') : null;
+    }
+
+    /**
+     * Одоогийн хуудасны query-гүй бүтэн URL (JSON-LD url талбарт).
+     *
+     * @return string
+     */
+    private function pageUrl(): string
+    {
+        return (string) $this->getRequest()->getUri()->withQuery('')->withFragment('');
     }
 
     /**

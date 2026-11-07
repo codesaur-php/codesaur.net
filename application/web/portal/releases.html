@@ -1,0 +1,25 @@
+<!-- Variables: t, lang, releases, packages -->
+
+<h1 class="tc-section-title mt-0">{{ t['releases_title'] }}</h1>
+<p class="tc-section-lead">{{ t['releases_lead'] }}</p>
+
+<div class="tc-dialog mt-0">
+    <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+    <span class="tc-dialog-title">CHANGELOG</span>
+    {% for release in releases %}
+        <div class="tc-release">
+            <span class="tc-release-date">{{ release['date'] }}</span>
+            <span class="tc-release-name">
+                <i class="bi {{ packages[release['key']]['icon'] }} me-1"></i><a href="{{ 'package'|link({'key': release['key']}) }}">{{ release['name'] }}</a>
+                v{{ release['version'] }}
+            </span>
+            <a href="{{ 'docs-doc'|link({'key': release['key'], 'doc': 'changelog'}) }}#{{ release['anchor'] }}">&#9658; {{ t['releases_view'] }}</a>
+        </div>
+    {% else %}
+        <p class="mb-0">{{ t['releases_empty'] }}</p>
+    {% endfor %}
+    <div class="tc-dialog-actions">
+        <a class="tc-btn tc-btn-gray" href="{{ 'rss'|link }}"><i class="bi bi-rss me-1"></i>RSS</a>
+        <a class="tc-btn tc-btn-alt" href="{{ 'packages'|link }}">{{ t['nav_packages'] }}</a>
+    </div>
+</div>

@@ -9,6 +9,7 @@ use Dashboard\Content\ReadNewsTrait;
 
 use Web\Portal\PortalContent;
 use Web\Portal\PortalController;
+use Web\Portal\PortalStats;
 
 /**
  * Class HomeController
@@ -51,18 +52,32 @@ class HomeController extends Template\TemplateController
         }
         $this->decorateReadNews($recent);
 
-        // codesaur.net портал: нүүр хуудас нь экосистемийн танилцуулга
+        // codesaur.net портал: нүүр хуудас нь экосистемийн танилцуулга.
+        // title/description-ийг PortalContent-оос өгнө - Settings-ийн сайтын
+        // гарчиг (codesaur.net) нь layout-д " | codesaur.net" суффикс болж залгагдана.
+        $lang = PortalContent::lang($code);
+        $t = PortalContent::texts($code);
+        $packages = PortalController::withInstalledVersions(PortalContent::packages());
         $vars = [
             'layout' => 'portal',
+            'title' => $t['seo_home_title'],
+            'description' => $t['seo_home_description'],
+            'json_ld' => PortalContent::jsonLd(
+                $packages['raptor'],
+                $lang,
+                (string) $this->getRequest()->getUri()->withQuery('')->withFragment('')
+            ),
             'recent' => $recent,
-            'lang' => PortalContent::lang($code),
-            't' => PortalContent::texts($code),
-            'packages' => PortalController::withInstalledVersions(PortalContent::packages()),
+            'lang' => $lang,
+            't' => $t,
+            'packages' => $packages,
+            'stats' => PortalStats::all($cache),
             'github_org' => PortalContent::GITHUB_ORG,
             'packagist_user' => PortalContent::PACKAGIST_USER,
             'discussions' => PortalContent::DISCUSSIONS,
         ];
 
+        $this->allowBrowserCache();
         $this->webTemplate(__DIR__ . '/home.html', $vars)->render();
 
         $this->log(

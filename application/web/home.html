@@ -1,4 +1,4 @@
-<!-- Variables: t, lang, packages, recent, github_org, packagist_user, discussions, index -->
+<!-- Variables: t, lang, packages, stats, recent, github_org, packagist_user, discussions, index -->
 
 <!-- Hero: editor window with an "About" dialog on top (Turbo C++ About box) -->
 <div class="tc-hero">
@@ -6,33 +6,31 @@
         <span class="tc-window-close">[<span>&#9632;</span>]</span>
         <span class="tc-window-title">codesaur.net</span>
         <span class="tc-window-num">1=[<span>&#8597;</span>]</span>
-<pre class="tc-listing"><span class="p">&lt;?php</span>            <span class="c">/* Raptor Framework */</span>
+<pre class="tc-listing"><span class="p">&lt;?php</span>            <span class="c">/* Raptor - application/web/blog */</span>
 
-<span class="k">namespace</span> <span class="i">Web</span>;
+<span class="k">namespace</span> <span class="i">Web\Blog</span>;
 
-<span class="k">use</span> <span class="i">Psr\Http\Message\ResponseInterface</span>;
-<span class="k">use</span> <span class="i">codesaur\Http\Application\Application</span> <span class="k">as</span> <span class="i">Base</span>;
-<span class="k">use</span> <span class="i">Dashboard\SessionMiddleware</span>;
-<span class="k">use</span> <span class="i">Dashboard\Localization\LocalizationMiddleware</span>;
+<span class="k">use</span> <span class="i">Dashboard\Blog\PostsModel</span>;
+<span class="k">use</span> <span class="i">Web\Template\TemplateController</span>;
 
-<span class="k">class</span> <span class="i">Application</span> <span class="k">extends</span> <span class="i">Base</span>
+<span class="k">class</span> <span class="i">BlogController</span> <span class="k">extends</span> <span class="i">TemplateController</span>
 {
-    <span class="k">public function</span> __construct(<span class="i">ResponseInterface</span> $response)
+    <span class="k">public function</span> show(<span class="k">string</span> $slug)
     {
-        <span class="k">parent</span>::__construct($response);
+        $post = (<span class="k">new</span> <span class="i">PostsModel</span>($this-&gt;pdo))-&gt;getRowWhere([
+            <span class="s">'slug'</span> =&gt; $slug,
+            <span class="s">'published'</span> =&gt; <span class="n">1</span>,
+        ]);
+        <span class="k">if</span> (<span class="k">empty</span>($post)) {
+            <span class="k">throw new</span> <span class="i">\Exception</span>(<span class="s">'Not found'</span>, <span class="n">404</span>);
+        }
 
-        $this-&gt;use(<span class="k">new</span> <span class="i">Template\ExceptionHandler</span>());
-        $this-&gt;use(<span class="k">new</span> <span class="i">SessionMiddleware</span>(
-            <span class="k">fn</span>($path, $method) =&gt; <span class="i">\str_starts_with</span>(
-                <span class="i">\preg_replace</span>(<span class="s">'#^/[a-z]{2}(?=/|$)#'</span>, <span class="s">''</span>, $path), <span class="s">'/session/'</span>)
-        ));
-        $this-&gt;use(<span class="k">new</span> <span class="i">LocalizationMiddleware</span>(<span class="k">null</span>));
-        $this-&gt;use(<span class="k">new</span> <span class="i">WebRouter</span>());
-        $this-&gt;use(<span class="k">new</span> <span class="i">Portal\PortalRouter</span>());
+        <span class="c">/* site layout + SEO meta from $post['title'] */</span>
+        $this-&gt;webTemplate(<span class="k">__DIR__</span> . <span class="s">'/blog-show.html'</span>, $post)-&gt;render();
         <span class="tc-cursor"></span>
     }
 }</pre>
-        <span class="tc-window-foot"><b>1:1</b> &#9552;&#9552; APPLICATION.PHP</span>
+        <span class="tc-window-foot"><b>1:1</b> &#9552;&#9552; BLOGCONTROLLER.PHP</span>
     </div>
 
     <div class="tc-dialog tc-hero-dialog text-center">
@@ -68,6 +66,10 @@
                 <tr><td>{{ t['stat_php'] }}:</td><td class="text-end fw-bold">8.2.1+</td></tr>
                 <tr><td>{{ t['stat_db'] }}:</td><td class="text-end fw-bold">MySQL, PostgreSQL, SQLite</td></tr>
                 <tr><td>{{ t['stat_license'] }}:</td><td class="text-end fw-bold">MIT</td></tr>
+                <tr><td>{{ t['stat_tests'] }}:</td><td class="text-end fw-bold">{{ stats['tests']|number_format(0, '.', ',') }}</td></tr>
+                <tr><td>{{ t['stat_zero_deps'] }}:</td><td class="text-end fw-bold">{{ stats['zero_deps'] }} / {{ packages|length - 1 }}</td></tr>
+                <tr><td>{{ t['stat_ci'] }}:</td><td class="text-end fw-bold">PHP {{ stats['ci']['php']|join(', ') }} / {{ stats['ci']['os']|join(', ') }}</td></tr>
+                <tr><td>{{ t['stat_since'] }}:</td><td class="text-end fw-bold">{{ t['stat_since_value'] }}</td></tr>
                 <tr><td>Warnings:</td><td class="text-end fw-bold">0</td></tr>
                 <tr><td>Errors:</td><td class="text-end fw-bold">0</td></tr>
             </table>
@@ -133,6 +135,51 @@
     <div class="tc-dialog-actions justify-content-center">
         <a class="tc-btn" href="{{ 'raptor'|link }}">Raptor</a>
         <a class="tc-btn tc-btn-alt" href="{{ 'docs-doc'|link({'key': 'raptor', 'doc': 'guide'}) }}">{{ t['doc_guide'] }}</a>
+    </div>
+</div>
+
+<!-- Everyday code: route / controller / template tabs. Template-ийн хаалтуудыг
+     HTML entity-ээр бичсэн - эс бөгөөс template engine өөрөө тэднийг үнэлнэ -->
+<h2 class="tc-section-title">{{ t['code_title'] }}</h2>
+<p class="tc-section-lead">{{ t['code_lead'] }}</p>
+<div class="tc-dialog">
+    <span class="tc-dialog-close">[<span>&#9632;</span>]</span>
+    <span class="tc-dialog-title">BLOG</span>
+    <div class="tc-tablist" role="tablist" aria-label="{{ t['code_title'] }}">
+        <button class="tc-tab" type="button" role="tab" id="code-tab-route" aria-controls="code-panel-route" aria-selected="true">WebRouter.php</button>
+        <button class="tc-tab" type="button" role="tab" id="code-tab-controller" aria-controls="code-panel-controller" aria-selected="false" tabindex="-1">BlogController.php</button>
+        <button class="tc-tab" type="button" role="tab" id="code-tab-template" aria-controls="code-panel-template" aria-selected="false" tabindex="-1">blog-show.html</button>
+    </div>
+    <div class="tc-tabpanel" role="tabpanel" id="code-panel-route" aria-labelledby="code-tab-route">
+<pre><code class="language-php">$this-&gt;GET('/blog', [Blog\BlogController::class, 'index'])-&gt;name('blog');
+$this-&gt;GET('/blog/{slug}', [Blog\BlogController::class, 'show'])-&gt;name('blog-post');</code></pre>
+    </div>
+    <div class="tc-tabpanel" role="tabpanel" id="code-panel-controller" aria-labelledby="code-tab-controller" hidden>
+<pre><code class="language-php">class BlogController extends TemplateController
+{
+    public function show(string $slug)
+    {
+        $post = (new PostsModel($this-&gt;pdo))-&gt;getRowWhere([
+            'slug' =&gt; $slug,
+            'published' =&gt; 1,
+        ]);
+        if (empty($post)) {
+            throw new \Exception('Not found', 404);
+        }
+        $this-&gt;webTemplate(__DIR__ . '/blog-show.html', $post)-&gt;render();
+    }
+}</code></pre>
+    </div>
+    <div class="tc-tabpanel" role="tabpanel" id="code-panel-template" aria-labelledby="code-tab-template" hidden>
+<pre><code class="language-html">&lt;article&gt;
+    &lt;h1&gt;&#123;&#123; title &#125;&#125;&lt;/h1&gt;
+    &lt;time&gt;&#123;&#123; published_at|date('Y-m-d') &#125;&#125;&lt;/time&gt;
+    &#123;&#123; content|raw &#125;&#125;
+&lt;/article&gt;</code></pre>
+    </div>
+    <div class="tc-dialog-actions">
+        <a class="tc-btn" href="{{ 'docs-doc'|link({'key': 'raptor', 'doc': 'tutorial'}) }}">{{ t['tutorial_cta'] }}</a>
+        <a class="tc-btn tc-btn-gray" href="{{ 'docs-doc'|link({'key': 'raptor', 'doc': 'guide'}) }}">{{ t['doc_guide'] }}</a>
     </div>
 </div>
 

@@ -25,6 +25,9 @@ class PortalRouter extends Router
         $this->GET('/packages', [PortalController::class, 'packages'])->name('packages');
         $this->GET('/package/{key}', [PortalController::class, 'package'])->name('package');
 
+        // Шинэчлэлүүд: багцуудын CHANGELOG.md-ээс автоматаар бүрддэг хувилбарын жагсаалт
+        $this->GET('/releases', [PortalController::class, 'releases'])->name('releases');
+
         // Баримт бичиг: хаб, багцын үндсэн баримт, тодорхой баримт
         $this->GET('/docs', [DocsController::class, 'index'])->name('docs');
         $this->GET('/docs/{key}', [DocsController::class, 'doc'])->name('docs-package');

@@ -7,7 +7,7 @@
     <div class="row align-items-center g-4">
         <div class="col-md-8">
             <div class="tc-cyan small text-uppercase">{{ raptor['name'] }}</div>
-            <h1 class="h2 mb-2">Raptor Framework<span class="tc-cursor"></span></h1>
+            <h1 class="h2 mb-2">Raptor<span class="tc-cursor"></span></h1>
             <p class="tc-lead">{{ raptor['summary'][lang] }}</p>
             <p class="mb-3">{{ raptor['description'][lang] }}</p>
             <div class="tc-badges mb-3">
@@ -18,7 +18,8 @@
                 {% if raptor['aikido'] is not empty %}<a href="{{ raptor['aikido_link'] }}" target="_blank" rel="noopener"><img src="https://img.shields.io/badge/aikido-{{ raptor['aikido'] }}%2F100-00A651?style=flat-square" alt="Aikido Intel {{ raptor['aikido'] }}/100"></a>{% endif %}
             </div>
             <div class="tc-dialog-actions">
-                <a class="tc-btn" href="{{ 'docs-doc'|link({'key': 'raptor', 'doc': 'guide'}) }}">{{ t['doc_guide'] }}</a>
+                <a class="tc-btn" href="{{ 'docs-doc'|link({'key': 'raptor', 'doc': 'tutorial'}) }}">{{ t['tutorial_cta'] }}</a>
+                <a class="tc-btn tc-btn-alt" href="{{ 'docs-doc'|link({'key': 'raptor', 'doc': 'guide'}) }}">{{ t['doc_guide'] }}</a>
                 <a class="tc-btn tc-btn-alt" href="{{ 'docs-doc'|link({'key': 'raptor', 'doc': 'api'}) }}">{{ t['doc_api'] }}</a>
                 <a class="tc-btn tc-btn-gray" href="{{ raptor['github'] }}" target="_blank" rel="noopener">GitHub</a>
                 <a class="tc-btn tc-btn-gray" href="{{ raptor['packagist'] }}" target="_blank" rel="noopener">Packagist</a>
@@ -46,6 +47,16 @@
         <span class="tc-group-label">PSR</span>
         {% for psr in raptor['psr'] %}<span class="tc-btn tc-btn-sm tc-btn-alt me-2 mb-2">{{ psr }}</span>{% endfor %}
     </div>
+</div>
+
+<!-- Honest positioning: why the ecosystem exists next to Laravel / Symfony -->
+<div class="tc-window">
+    <span class="tc-window-close">[<span>&#9632;</span>]</span>
+    <span class="tc-window-title">WHY.TXT</span>
+    <span class="tc-window-num">2=[<span>&#8597;</span>]</span>
+    <h2 class="h5">{{ t['own_title'] }}</h2>
+    <p class="mb-0">{{ t['own_text'] }}</p>
+    <span class="tc-window-foot"><b>{{ t['package_lines'] }}:</b> {{ raptor['stats']['lines']|number_format(0, '.', ',') }} &middot; <b>{{ t['package_test_count'] }}:</b> {{ raptor['stats']['tests']|number_format(0, '.', ',') }}</span>
 </div>
 
 <!-- Architecture + middleware -->

@@ -80,6 +80,23 @@
                 <pre class="mb-0"><code class="language-bash">{{ package['install'] }}</code></pre>
             </div>
 
+            <!-- Тоо баримт: PortalStats (src/ мөр, Composer хамаарал, тест метод) -->
+            <div class="tc-group">
+                <span class="tc-group-label">{{ t['package_facts'] }}</span>
+                <table class="w-100 tc-facts">
+                    <tr><td>{{ t['package_lines'] }}:</td><td class="fw-bold">{{ package['stats']['lines']|number_format(0, '.', ',') }}</td></tr>
+                    <tr><td>{{ t['package_test_count'] }}:</td><td class="fw-bold">{{ package['stats']['tests']|number_format(0, '.', ',') }}</td></tr>
+                    <tr>
+                        <td>{{ t['package_runtime_deps'] }}:</td>
+                        <td class="fw-bold">
+                            {% if package['stats']['deps'] is empty %}0 ({{ t['package_no_deps'] }})
+                            {% else %}{{ package['stats']['deps']|length }}<div class="small fw-normal">{{ package['stats']['deps']|keys|join(', ') }}</div>{% endif %}
+                        </td>
+                    </tr>
+                    {% if package['stats']['ci']['php'] is not empty %}<tr><td>{{ t['package_ci'] }}:</td><td class="fw-bold">PHP {{ package['stats']['ci']['php']|join(', ') }}<div class="small fw-normal">{{ package['stats']['ci']['os']|join(', ') }}</div></td></tr>{% endif %}
+                </table>
+            </div>
+
             <div class="tc-group">
                 <span class="tc-group-label">{{ t['package_requires'] }}</span>
                 <ul class="tc-checklist mb-0">

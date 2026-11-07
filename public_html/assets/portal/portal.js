@@ -4,6 +4,7 @@
  *  - mobile menu toggle for the top menu bar
  *  - highlight.js initialisation (language alias mapping)
  *  - copy button on code blocks
+ *  - tabs (role=tablist, keyboard arrows)
  *  - F1 keyboard shortcut -> documentation (like Turbo C help)
  *  - active menu item detection by URL prefix
  */
@@ -98,6 +99,42 @@
         });
     }
 
+    /* Tabs: [role=tablist] > button[role=tab][aria-controls]; arrow keys move between tabs */
+    function initTabs() {
+        document.querySelectorAll('[role="tablist"]').forEach(function (list) {
+            var tabs = Array.prototype.slice.call(list.querySelectorAll('[role="tab"]'));
+            function select(tab) {
+                tabs.forEach(function (t) {
+                    var on = t === tab;
+                    t.setAttribute('aria-selected', on ? 'true' : 'false');
+                    t.tabIndex = on ? 0 : -1;
+                    var panel = document.getElementById(t.getAttribute('aria-controls'));
+                    if (panel) {
+                        panel.hidden = !on;
+                    }
+                });
+            }
+            tabs.forEach(function (tab, i) {
+                tab.addEventListener('click', function () {
+                    select(tab);
+                });
+                tab.addEventListener('keydown', function (e) {
+                    var next = null;
+                    if (e.key === 'ArrowRight') {
+                        next = tabs[(i + 1) % tabs.length];
+                    } else if (e.key === 'ArrowLeft') {
+                        next = tabs[(i - 1 + tabs.length) % tabs.length];
+                    }
+                    if (next) {
+                        e.preventDefault();
+                        select(next);
+                        next.focus();
+                    }
+                });
+            });
+        });
+    }
+
     function initHotkeys() {
         var docs = document.querySelector('a[data-hotkey="F1"]');
         document.addEventListener('keydown', function (e) {
@@ -113,6 +150,7 @@
         initActiveMenu();
         initHighlight();
         initCopyButtons();
+        initTabs();
         initHotkeys();
     });
 })();

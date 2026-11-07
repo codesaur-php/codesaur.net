@@ -111,6 +111,26 @@ body.tc-desktop img {
     50% { opacity: 0; }
 }
 
+/* Keyboard focus: clear yellow ring on black (Turbo C selection colors) */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+    outline: 2px solid var(--tc-yellow);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 4px var(--tc-black);
+}
+
+/* Reduced motion: stop the cursor blink and every other animation / transition */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 /* ---------------------------------------------------------------
  * Menu bar
  * --------------------------------------------------------------- */
@@ -180,12 +200,6 @@ body.tc-desktop img {
 .tc-menu-lang a {
     gap: .35rem;
     padding: 0 .5rem;
-}
-.tc-flag {
-    display: block;
-    width: 20px;
-    height: 15px;
-    border: 1px solid var(--tc-black);
 }
 .tc-menu-label::first-letter {
     color: var(--tc-red);
@@ -1231,6 +1245,70 @@ body.tc-desktop img {
 }
 .tc-legacy h2, .tc-legacy h4 {
     font-size: 1.25rem;
+}
+
+/* ---------------------------------------------------------------
+ * Tabs (home "Everyday code" window): file tabs like editor buffers
+ * --------------------------------------------------------------- */
+.tc-tablist {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+    margin-bottom: .75rem;
+}
+.tc-tab {
+    font-family: var(--tc-font);
+    font-size: .9rem;
+    border: 0;
+    padding: .15rem .75rem;
+    background: var(--tc-cyan);
+    color: var(--tc-black);
+    cursor: pointer;
+}
+.tc-tab[aria-selected="true"] {
+    background: var(--tc-blue);
+    color: var(--tc-yellow);
+    font-weight: 700;
+}
+.tc-tab:hover {
+    background: var(--leaf-4);
+    color: var(--tc-white);
+}
+.tc-tabpanel[hidden] {
+    display: none;
+}
+.tc-tabpanel pre {
+    margin: 0 0 .5rem;
+}
+
+/* Facts table (package page, compile dialog) */
+.tc-facts td {
+    padding: .1rem 0;
+    vertical-align: top;
+}
+.tc-facts td:first-child {
+    padding-right: 1rem;
+    white-space: nowrap;
+}
+
+/* Releases list */
+.tc-release {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem 1rem;
+    align-items: baseline;
+    padding: .35rem 0;
+    border-bottom: 1px dashed var(--tc-dgray);
+}
+.tc-release:last-child {
+    border-bottom: 0;
+}
+.tc-release-name {
+    min-width: 14rem;
+    font-weight: 700;
+}
+.tc-release-date {
+    color: var(--tc-dgray);
 }
 
 @media print {

@@ -4,6 +4,7 @@ namespace Web\Template;
 
 use codesaur\Template\FileTemplate;
 
+use Dashboard\ContentSecurityPolicy;
 use Dashboard\Content\PagesModel;
 
 use Web\Portal\PortalContent;
@@ -72,6 +73,10 @@ class TemplateController extends \Dashboard\Controller
         if (!\headers_sent()) {
             \header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()');
         }
+
+        // Web-ийн CSP (frame-ancestors-гүй - сайтыг бусад сайт iframe-д оруулж болно).
+        // Зөвхөн HTML хуудасны замд илгээнэ - ContentSecurityPolicy-ийн тайлбарыг үз.
+        ContentSecurityPolicy::send(ContentSecurityPolicy::WEB);
 
         $index = $this->template(__DIR__ . '/index.html');
         $content = $this->template($template, $vars);
